@@ -4,13 +4,13 @@ CFLAGS = -Wall
 all: maintab
 
 maintab: maintab.o tab.o
-    $(CC) $(CFLAGS) -o maintab maintab.o tab.o
+	$(CC) $(CFLAGS) -o maintab maintab.o tab.o
 
 maintab.o: maintab.c tab.h
-    $(CC) $(CFLAGS) -c maintab.c
+	$(CC) $(CFLAGS) -c maintab.c
 
 tab.o: tab.c tab.h
-    $(CC) $(CFLAGS) -c tab.c
+	$(CC) $(CFLAGS) -c tab.c
 
 clean:
-    rm -f *.o maintab
+	rm -f *.o maintab
