@@ -1,7 +1,7 @@
 #ifndef TAB_H
 #define TAB_H
 
-#define NMAX 100000  // Taille maximale du tableau
+#define NMAX 1000000  // Taille maximale du tableau
 
 // Prototypes des fonctions
 void InitTab(int *tab, int size);
