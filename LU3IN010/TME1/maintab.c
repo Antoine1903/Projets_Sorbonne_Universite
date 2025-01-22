@@ -41,25 +41,21 @@ int main() {
 
     PrintTab(heapTab, NMAX);
 
-    /* Question 9
-    La mémoire en cours d'utilisation n'est pas maximale juste avant l'appel à
-    InitTab avec le tableau alloué sur la pile, ce qui signifie qu'elle est allouée
-    lors de la déclaration de tab. Le reste de la mémoire utilisée est ajouté pendant
-    l'appel à InitTab avec le tableau alloué dynamiquement, car effectivement, au 2ème
-    et 3ème appel de PrintMem, l'utilisation de la mémoire est la même, donc il n'y a
-    pas eu d'allocation à ce moment. 
-    
+    /* Question 2.9
     Ce qu'on peut constater :
-        Mémoire allouée avant et après l'appel à InitTab :
-        Pour le tableau tab (sur la pile), la mémoire est effectivement allouée lors de la déclaration du tableau, et ensuite, lorsque InitTab est appelé, la mémoire est utilisée pour remplir les données dans tab.
-        Pour le tableau heapTab (sur le tas), la mémoire est allouée lors de l'appel à malloc, mais les données ne sont réellement allouées qu'une fois que InitTab est appelé. Cependant, le changement de l'utilisation de la mémoire n'est visible qu'après l'appel à InitTab.
+    Mémoire allouée sur la pile : La mémoire pour le tableau tab est allouée dès sa déclaration dans la pile.
+    Mémoire allouée sur le tas : La mémoire pour le tableau heapTab est allouée uniquement lors de l'appel à malloc. 
+    Cependant, l'utilisation effective de cette mémoire augmente lors de l'appel à InitTab, où les données sont remplies, 
+    ce qui entraîne une utilisation plus importante de la mémoire.
     
-    En résumé :
-        Mémoire allouée sur la pile : Dès la déclaration du tableau (int tab[NMAX];), la mémoire est allouée.
-        Mémoire allouée sur le tas : La mémoire est allouée uniquement lorsque malloc est appelé pour le tableau heapTab. Les données sont ensuite remplies lors de l'appel à InitTab.
-    Ainsi, l'allocation de mémoire effective pour tab se produit dès sa déclaration (sur la pile), tandis que pour heapTab, elle se produit lors de l'appel à malloc (sur le tas).
-    */
+    Ainsi, l'allocation de mémoire effective pour tab (sur la pile) se produit dès sa déclaration, 
+    tandis que pour heapTab (sur le tas), elle a lieu lors de l'appel à malloc.
 
+    La mémoire est allouée à plusieurs moments :
+    Lors de la déclaration de tab dans la pile et de l'appel à malloc pour heapTab au début du main.
+    Lors des appels à InitTab, qui remplissent les tableaux avec des données, 
+    augmentant ainsi l'utilisation effective de la mémoire.
+    */
 
     // Tester les fonctions SumTab et MinSumTab
     int min;
