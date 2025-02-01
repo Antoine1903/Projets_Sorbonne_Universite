@@ -37,9 +37,73 @@ Temps d'exécution de la commande 'nonexistent_command': 0 secondes et 7522 micr
 Aucune commande n'a été fournie.
 
 
-Question 3.2
+Question 3.2 :
 ./mytimes "sleep 5" "sleep 10"
 Exécution de la commande : sleep 5
 Temps d'exécution de la commande 'sleep 5': 5 secondes et 22591 microsecondes
 Exécution de la commande : sleep 10
 Temps d'exécution de la commande 'sleep 10': 10 secondes et 20371 microsecondes
+
+
+Question 4.1 :
+./mytimes2 "ls -l" "./loopsys"
+Exécution de la commande : ls -l
+total 288
+-rwxr-xr-x  1 yuxiangzhang  staff  16840  2  1 16:07 loopcpu
+-rw-r--r--  1 yuxiangzhang  staff    182  2  1 16:06 loopcpu.c
+-rwxr-xr-x  1 yuxiangzhang  staff  33432  2  1 16:34 loopsys
+-rw-r--r--  1 yuxiangzhang  staff    255  2  1 16:32 loopsys.c
+-rwxr-xr-x  1 yuxiangzhang  staff  33592  2  1 18:52 mytimes
+-rw-r--r--@ 1 yuxiangzhang  staff   1547  2  1 18:51 mytimes.c
+-rwxr-xr-x  1 yuxiangzhang  staff  33624  2  1 20:12 mytimes2
+-rw-r--r--@ 1 yuxiangzhang  staff   2130  2  1 20:12 mytimes2.c
+Statistiques de "ls -l" :
+Temps total : 0.030000
+Temps utilisateur : 0.000000
+Temps systeme : 0.010000
+Temps utilisateur fils : 0.000000
+Temps systeme fils : 0.010000
+
+Exécution de la commande : ./loopsys
+Statistiques de "./loopsys" :
+Temps total : 0.150000
+Temps utilisateur : 0.000000
+Temps systeme : 0.000000
+Temps utilisateur fils : 0.140000
+Temps systeme fils : 0.000000
+
+
+Question 4.2 :
+./mytimes2 "sleep 5" ./loopcpu ./loopsys
+Exécution de la commande : sleep 5
+Statistiques de "sleep 5" :
+Temps total : 5.020000
+Temps utilisateur : 0.000000
+Temps systeme : 0.000000
+Temps utilisateur fils : 0.000000
+Temps systeme fils : 0.000000
+
+Exécution de la commande : ./loopCPU
+Statistiques de "./loopCPU" :
+Temps total : 6.930000
+Temps utilisateur : 0.000000
+Temps systeme : 0.000000
+Temps utilisateur fils : 6.910000
+Temps systeme fils : 0.020000
+
+Exécution de la commande : ./loopsys
+Statistiques de "./loopsys" :
+Temps total : 0.150000
+Temps utilisateur : 0.000000
+Temps systeme : 0.000000
+Temps utilisateur fils : 0.140000
+Temps systeme fils : 0.010000
+
+
+Question 5.1 :
+ps est de priorité 31.
+
+
+Question 5.2 :
+ps est toujours de priorité 31. (test effectué sous macOS)
+ps est maintenant de priorité maximale : 1 (test effectué sous Linux)
