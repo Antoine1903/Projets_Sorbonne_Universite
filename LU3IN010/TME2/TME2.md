@@ -20,3 +20,26 @@ Au lancement du programme, on a : ./loopsys 0.14s user 0.01s system 38% cpu 0.39
 Cela indique que 0.14 secondes de temps CPU ont été utilisées pour exécuter getpid() à chaque intération. Le CPU passe alors en mode kernel mais n'a pas de tâche à effectuer donc revient immédiatement en mode user pour continuer les itérations de la boucle. Le temps total prend en compte d'autres tâches de l'OS, c'est pourquoi il est plus élevé que le temps CPU (kernel + user) lié à l'exécution du programme.
 
 
+Question 2.2 :
+./mytimes ls pwd nonexistent_command
+Exécution de la commande : ls
+loopcpu        loopsys        mytimes
+loopcpu.c    loopsys.c    mytimes.c
+Temps d'exécution de la commande 'ls': 0 secondes et 21232 microsecondes
+Exécution de la commande : pwd
+/Users/yuxiangzhang/Desktop/LU3IN010/TME2
+Temps d'exécution de la commande 'pwd': 0 secondes et 7433 microsecondes
+Exécution de la commande : nonexistent_command
+sh: nonexistent_command: command not found
+La commande 'nonexistent_command' a échoué avec le code de sortie : 127
+Temps d'exécution de la commande 'nonexistent_command': 0 secondes et 7522 microsecondes
+./mytimes
+Aucune commande n'a été fournie.
+
+
+Question 3.2
+./mytimes "sleep 5" "sleep 10"
+Exécution de la commande : sleep 5
+Temps d'exécution de la commande 'sleep 5': 5 secondes et 22591 microsecondes
+Exécution de la commande : sleep 10
+Temps d'exécution de la commande 'sleep 10': 10 secondes et 20371 microsecondes
