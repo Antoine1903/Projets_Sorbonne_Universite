@@ -7,6 +7,7 @@
 void lance_commande(char *commande) {
     struct tms start_time, end_time;
     clock_t start_clock, end_clock;
+    long ticks_per_sec = sysconf(_SC_CLK_TCK);  // Récupération des ticks par seconde
 
     // Récupérer l'heure avant l'exécution de la commande
     start_clock = times(&start_time);
@@ -20,25 +21,23 @@ void lance_commande(char *commande) {
     if (resultat == -1) {
         // Si system() échoue
         printf("Erreur lors de l'exécution de la commande : %s\n", commande);
-    } else {
-        // Si le processus s'est terminé normalement mais avec une erreur
-        if (WIFEXITED(resultat) && WEXITSTATUS(resultat) != 0) {
-            printf("La commande '%s' a échoué avec le code de sortie : %d\n", commande, WEXITSTATUS(resultat));
-        }
-
-        // Calcul du temps d'exécution en mode utilisateur et système
-        long user_time = end_time.tms_utime - start_time.tms_utime;
-        long system_time = end_time.tms_stime - start_time.tms_stime;
-
-        // Conversion du temps en secondes et microsecondes
-        double user_time_sec = user_time / (double)sysconf(_SC_CLK_TCK);
-        double system_time_sec = system_time / (double)sysconf(_SC_CLK_TCK);
-
-        // Affichage du temps d'exécution
-        printf("Temps d'exécution de la commande '%s':\n", commande);
-        printf("  Mode utilisateur: %.6f secondes\n", user_time_sec);
-        printf("  Mode système: %.6f secondes\n", system_time_sec);
     }
+
+    // Calcul des temps d'exécution
+    double total_time_sec = (double)(end_clock - start_clock) / ticks_per_sec;
+    double user_time_sec = (double)(end_time.tms_utime - start_time.tms_utime) / ticks_per_sec;
+    double system_time_sec = (double)(end_time.tms_stime - start_time.tms_stime) / ticks_per_sec;
+    double child_user_time_sec = (double)(end_time.tms_cutime - start_time.tms_cutime) / ticks_per_sec;
+    double child_system_time_sec = (double)(end_time.tms_cstime - start_time.tms_cstime) / ticks_per_sec;
+
+    // Affichage des statistiques
+    printf("Statistiques de \"%s\" :\n", commande);
+    printf("Temps total : %.6f\n", total_time_sec);
+    printf("Temps utilisateur : %.6f\n", user_time_sec);
+    printf("Temps systeme : %.6f\n", system_time_sec);
+    printf("Temps utilisateur fils : %.6f\n", child_user_time_sec);
+    printf("Temps systeme fils : %.6f\n", child_system_time_sec);
+    printf("\n");
 }
 
 int main(int argc, char *argv[]) {
