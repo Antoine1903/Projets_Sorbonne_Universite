@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <sys/time.h>
 #include <sys/times.h>  // Pour times()
+#include <unistd.h>  // Pour sysconf et _SC_CLK_TCK
 
 void lance_commande(char *commande) {
     struct tms start_time, end_time;
