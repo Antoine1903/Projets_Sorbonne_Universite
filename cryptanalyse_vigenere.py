@@ -10,7 +10,8 @@ import sys, getopt, string, math
 alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 # Fréquence moyenne des lettres en français
-# À modifier
+
+# Déjà modifié
 freq_FR = [0.092060, 0.010360, 0.030219, 0.037547, 0.171768, 0.010960, 0.010608, 0.010718, 0.075126, 0.003824, 0.000070, 0.061318, 0.026482, 0.070310, 0.049171, 0.023706, 0.010156, 0.066094, 0.078126, 0.073770, 0.063540, 0.016448, 0.000011, 0.004080, 0.002296, 0.001231]
 
 # Chiffrement César
@@ -48,17 +49,23 @@ def chiffre_vigenere(txt, key):
     """
     Chiffrement de Vigenère
     :param txt: Texte clair (str)
-    :param key: Clé (str)
+    :param key: Clé (str ou liste d'entiers)
     :return: Texte chiffré (str)
     """
     encrypted_text = ""
-    key = key.upper()
-    key_length = len(key)
+    
+    # Vérifie si la clé est une chaîne ou une liste d'entiers
+    if isinstance(key, str):
+        key_shifts = [ord(k.upper()) - ord('A') for k in key]
+    else:
+        key_shifts = key  # La clé est déjà une liste d'entiers
+    
+    key_length = len(key_shifts)
     
     for i, char in enumerate(txt):
         if char.isalpha():
             start = ord('A') if char.isupper() else ord('a')
-            shift = ord(key[i % key_length]) - ord('A')
+            shift = key_shifts[i % key_length]  # Utilisation de la clé sous forme de décalage numérique
             encrypted_char = chr((ord(char) - start + shift) % 26 + start)
             encrypted_text += encrypted_char
         else:
@@ -71,23 +78,30 @@ def dechiffre_vigenere(txt, key):
     """
     Déchiffrement de Vigenère
     :param txt: Texte chiffré (str)
-    :param key: Clé (str)
+    :param key: Clé (str ou liste d'entiers)
     :return: Texte déchiffré (str)
     """
     decrypted_text = ""
-    key = key.upper()
-    key_length = len(key)
+    
+    # Vérifie si la clé est une chaîne ou une liste d'entiers
+    if isinstance(key, str):
+        key_shifts = [ord(k.upper()) - ord('A') for k in key]
+    else:
+        key_shifts = key  # La clé est déjà une liste d'entiers
+    
+    key_length = len(key_shifts)
     
     for i, char in enumerate(txt):
         if char.isalpha():
             start = ord('A') if char.isupper() else ord('a')
-            shift = ord(key[i % key_length]) - ord('A')
+            shift = key_shifts[i % key_length]
             decrypted_char = chr((ord(char) - start - shift) % 26 + start)
             decrypted_text += decrypted_char
         else:
             decrypted_text += char
     
     return decrypted_text
+
 
 # Analyse de fréquences
 def freq(txt):
