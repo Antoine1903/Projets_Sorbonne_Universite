@@ -46,16 +46,48 @@ def dechiffre_cesar(txt, key):
 # Chiffrement Vigenere
 def chiffre_vigenere(txt, key):
     """
-    Documentation à écrire
+    Chiffrement de Vigenère
+    :param txt: Texte clair (str)
+    :param key: Clé (str)
+    :return: Texte chiffré (str)
     """
-    return txt
+    encrypted_text = ""
+    key = key.upper()
+    key_length = len(key)
+    
+    for i, char in enumerate(txt):
+        if char.isalpha():
+            start = ord('A') if char.isupper() else ord('a')
+            shift = ord(key[i % key_length]) - ord('A')
+            encrypted_char = chr((ord(char) - start + shift) % 26 + start)
+            encrypted_text += encrypted_char
+        else:
+            encrypted_text += char
+    
+    return encrypted_text
 
 # Déchiffrement Vigenere
 def dechiffre_vigenere(txt, key):
     """
-    Documentation à écrire
+    Déchiffrement de Vigenère
+    :param txt: Texte chiffré (str)
+    :param key: Clé (str)
+    :return: Texte déchiffré (str)
     """
-    return txt
+    decrypted_text = ""
+    key = key.upper()
+    key_length = len(key)
+    
+    for i, char in enumerate(txt):
+        if char.isalpha():
+            start = ord('A') if char.isupper() else ord('a')
+            shift = ord(key[i % key_length]) - ord('A')
+            decrypted_char = chr((ord(char) - start - shift) % 26 + start)
+            decrypted_text += decrypted_char
+        else:
+            decrypted_text += char
+    
+    return decrypted_text
 
 # Analyse de fréquences
 def freq(txt):
