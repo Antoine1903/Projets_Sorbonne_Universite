@@ -1,5 +1,6 @@
 import os
 from collections import deque
+import heapq
 
 def lire_pref_etudiants(fichier):
     with open(fichier, "r") as f:
@@ -29,51 +30,61 @@ def lire_pref_parcours(fichier):
     return CP, capacites
 
 
+def gale_shapley_optimise(CE, CP, capacites):
+    n = len(CE)
+    m = len(CP)
 
-def gale_shapley_hopitaux(CE, CP, capacites):
-    n = len(CE)  # Nombre d'étudiants
-    m = len(CP)  # Nombre de parcours
-
-    # Étape 1 : Prétraitement pour accélérer les opérations
+    # Étape 1 : Prétraitement optimisé
 
     # 1. File des étudiants libres
-    etudiants_libres = deque(range(n))
-
+    etudiants_libres = deque(range(n))  # O(1) pour ajout/retrait
+    
     # 2. Suivi des propositions des étudiants
-    prochain_parcours = [0] * n  # Index du prochain parcours à qui proposer
+    prochain_parcours = [0] * n  # O(1) pour accès et incrément
 
-    # 3. Dictionnaire pour retrouver rapidement le rang d’un étudiant dans un parcours
+    # 3. Classement des étudiants pour chaque parcours
     classement_parcours = [{etudiant: rang for rang, etudiant in enumerate(CP[j])} for j in range(m)]
 
-    # 4. Liste des étudiants actuellement affectés à chaque parcours
-    affectations = {j: [] for j in range(m)}
+    # 4. Affectations sous forme de heaps pour un accès rapide à l'étudiant le moins préféré
+    affectations = {j: [] for j in range(m)}  # Chaque parcours a un heap
+    set_affectations = {j: set() for j in range(m)}  # Vérification rapide de la présence
 
-    # 5. Capacité restante pour chaque parcours
+    # 5. Capacité restante
     capacite_restante = capacites[:]
 
-    # Étape 2 : Algorithme de Gale-Shapley
-
+    # Algorithme optimisé
     while etudiants_libres:
-        i = etudiants_libres.popleft()  # Étudiant libre
-        while prochain_parcours[i] < m:
-            j = CE[i][prochain_parcours[i]]  # Parcours préféré suivant
-            prochain_parcours[i] += 1  # Passer au suivant pour la prochaine itération
+        i = etudiants_libres.popleft()  # O(1)
 
-            # 1. Si le parcours a de la place, on affecte directement
+        while prochain_parcours[i] < m:
+            j = CE[i][prochain_parcours[i]]  # O(1)
+            prochain_parcours[i] += 1
+
+            # Si le parcours a de la place
             if capacite_restante[j] > 0:
-                affectations[j].append(i)
+                heapq.heappush(affectations[j], (-classement_parcours[j][i], i))  # O(log k)
+                set_affectations[j].add(i)
                 capacite_restante[j] -= 1
                 break
 
-            # 2. Si le parcours est plein, vérifier si i est mieux classé qu’un étudiant actuel
-            moins_prefere = max(affectations[j], key=lambda x: classement_parcours[j][x])
-            if classement_parcours[j][i] < classement_parcours[j][moins_prefere]:
-                affectations[j].remove(moins_prefere)
-                affectations[j].append(i)
-                etudiants_libres.append(moins_prefere)  # L'ancien étudiant devient libre
+            # Si le parcours est plein, vérifier si l'étudiant est mieux classé
+            moins_prefere_rang, moins_prefere = max(affectations[j])  # O(1) car heap inversé
+            if classement_parcours[j][i] < -moins_prefere_rang:
+                # Remplacement
+                affectations[j].remove((moins_prefere_rang, moins_prefere))  # O(log k)
+                heapq.heapify(affectations[j])  # Maintenir la propriété du heap
+
+                heapq.heappush(affectations[j], (-classement_parcours[j][i], i))  # O(log k)
+                set_affectations[j].remove(moins_prefere)
+                set_affectations[j].add(i)
+
+                etudiants_libres.append(moins_prefere)  # O(1)
                 break
 
-    return affectations
+    # Transformation du résultat pour une lecture facile
+    result = {j: [etudiant for _, etudiant in affectations[j]] for j in range(m)}
+    return result
+
 
 
 CE = lire_pref_etudiants("PrefEtu.txt")
@@ -89,7 +100,7 @@ for i, row in enumerate(CP):
     print(f"{i}: {row}")
 
 # Exécution de l'algorithme
-affectations = gale_shapley_hopitaux(CE, CP, capacites)
+affectations = gale_shapley_optimise(CE, CP, capacites)
 
 # Affichage du résultat
 print("\nAffectations finales :")
