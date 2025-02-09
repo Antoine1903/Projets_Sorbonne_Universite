@@ -93,32 +93,31 @@ int SJFElect(void) {
 
 // Approximation SJF
 int ApproxSJF(void) {
-  int i, p = -1;
+    int i, p = -1;
+    float priority, temp_priority;
 
-  // Trouver le premier processus en état RUN
-  for (i = 0; i < MAXPROC; i++) {
-      if (Tproc[i].flag == RUN) {
-          p = i;
-          break;
-      }
-  }
+    // Initialiser la priorité la plus faible possible
+    priority = __FLT_MAX__;
 
-  // Si aucun processus n'est en état RUN, retourner -1 (aucune élection possible)
-  if (p == -1) {
-      return -1;
-  }
+    // Parcourir tous les processus pour trouver celui avec la priorité la plus élevée
+    for (i = 0; i < MAXPROC; i++) {
+        if (Tproc[i].flag == RUN) {
+            
+            // Calcul de la priorité en tenant compte du vieillissement
+            // Plus le processus attend longtemps, plus la priorité augmente
+            temp_priority = Tproc[i].ncpu - (0.2 * Tproc[i].waiting_time);
+            
+            // Sélectionner le processus avec la plus petite priorité (durée CPU ajustée par vieillissement)
+            if (temp_priority < priority) {
+                priority = temp_priority;
+                p = i;
+            }
+        }
+    }
 
-  // Parcourir les processus restants pour trouver celui avec la plus courte durée
-  for (; i < MAXPROC; i++) {
-      if (Tproc[i].flag == RUN && Tproc[i].ncpu < Tproc[p].ncpu) {
-          p = i;
-      }
-  }
-
-  return p;
+    // Retourner l'indice du processus élu ou -1 si aucun n'est en état RUN
+    return p;
 }
-
-
 
 
 int main (int argc, char *argv[]) {

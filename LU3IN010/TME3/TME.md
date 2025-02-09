@@ -3,6 +3,7 @@ Yuxiang Zhang & Antoine Lecomte
 TME3
 
 Question 1.3 :
+
 Avec un quantum de 0.3s :
 
 ./main
@@ -136,10 +137,74 @@ Average:		2.069s		0.491s		1.579s
 --------------------------------------------------------------------
 
 
-Les temps d'attente moyens sont assez proches : 1.344s pour aléatoire contre 1.309 pour ApproxSJF.
-Temps d'attente CPU moyen : Algorithme aléatoire : 0.490s, ApproxSJF : 0.504s.
-ApproxSJF semble légèrement plus efficace pour réduire les temps d'attente mais les résultats sont proches.
+Les temps d'attente moyens sont assez proches : 2.069s pour l'algorithme aléatoire contre 1.813s pour ApproxSJF.
+Temps d'attente CPU moyen : Algorithme aléatoire : 0.491s, ApproxSJF : 0.504s.
+Le temps d'attente est de 1.579s toujours en moyenne pour l'algorithme aléatoire et de 1.309s pour ApproxSJF.
+ApproxSJF semble plus efficace que l'algorithme aléatoire sur le temps d'exécution en totalité et attend moins longtemps que l'algorithme aléatoire. Bien que l'algorithme aléatoire montre un temps CPU légèrement inférieur à ApproxSJF, il s'exécute plus lentement que celui-ci et donc ApproxSJF est à privilégier dans la plupart des cas, notamment dans des cas d'utilisation où il est important de limiter au maximum le temps d'attente (dans un programme qui par exemple demande beaucoup de passages en attente des processus).
 
 
 Question 3.3 :
-ApproxSJF peut provoquer une famine.
+
+ApproxSJF peut provoquer une famine pour des processus plus longs, dans le cas où des processus plus courts arrivent en continu, ce qui a pour effet de repousser continuellement ces processus plus longs qui n'arrivent pas à arriver à terme de leur exécution, car l'algorithme ApproxSJF choisit toujours le processus avec la plus courte durée de traitement (ou consommation CPU la plus faible) donc les processus longs peuvent ne jamais être sélectionnés s'il y a toujours des processus plus courts en attente. Au contraire, l'algorithme aléatoire n'a pas ce problème.
+
+ApproxSJF initial (peut provoquer une famine) : 
+
+int ApproxSJF(void) {
+  int i, p = -1;
+
+  // Trouver le premier processus en état RUN
+  for (i = 0; i < MAXPROC; i++) {
+      if (Tproc[i].flag == RUN) {
+          p = i;
+          break;
+      }
+  }
+
+  // Si aucun processus n'est en état RUN, retourner -1 (aucune élection possible)
+  if (p == -1) {
+      return -1;
+  }
+
+  // Parcourir les processus restants pour trouver celui avec la plus courte durée
+  for (; i < MAXPROC; i++) {
+      if (Tproc[i].flag == RUN && Tproc[i].ncpu < Tproc[p].ncpu) {
+          p = i;
+      }
+  }
+
+  return p;
+}
+
+
+Désormais, le procédé de vieillissement pour augmenter la priorité d'un processus qui a passé plus ou moins de temps en attente est appliqué sur la nouvelle version de la fonction comme suit :
+
+
+int ApproxSJF(void) {
+    int i, p = -1;
+    float priority, temp_priority;
+
+    // Initialiser la priorité la plus faible possible
+    priority = __FLT_MAX__;
+
+    // Parcourir tous les processus pour trouver celui avec la priorité la plus élevée
+    for (i = 0; i < MAXPROC; i++) {
+        if (Tproc[i].flag == RUN) {
+            
+            // Calcul de la priorité en tenant compte du vieillissement
+            // Plus le processus attend longtemps, plus la priorité augmente
+            temp_priority = Tproc[i].ncpu - (0.2 * Tproc[i].waiting_time);
+            
+            // Sélectionner le processus avec la plus petite priorité (durée CPU ajustée par vieillissement)
+            if (temp_priority < priority) {
+                priority = temp_priority;
+                p = i;
+            }
+        }
+    }
+
+    // Retourner l'indice du processus élu ou -1 si aucun n'est en état RUN
+    return p;
+}
+
+
+Nous avons utilisé un facteur d'augmentation de priorité de 0.2 pour chaque seconde d'attente à titre d'exemple. L'effet de cette modification est que les processus qui attendent longtemps voient leur priorité augmentée, même s'ils ont des durées CPU plus longues et nous avons maintenant la garantie que tous les processus seront finalement exécutés. Plus ce coefficient est important, plus le risque de famine est faible, mais cela diminue l'efficacité de l'algorithme ApproxSJF.
