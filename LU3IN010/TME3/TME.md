@@ -176,35 +176,4 @@ int ApproxSJF(void) {
 }
 
 
-Désormais, le procédé de vieillissement pour augmenter la priorité d'un processus qui a passé plus ou moins de temps en attente est appliqué sur la nouvelle version de la fonction comme suit :
-
-
-int ApproxSJF(void) {
-    int i, p = -1;
-    float priority, temp_priority;
-
-    // Initialiser la priorité la plus faible possible
-    priority = __FLT_MAX__;
-
-    // Parcourir tous les processus pour trouver celui avec la priorité la plus élevée
-    for (i = 0; i < MAXPROC; i++) {
-        if (Tproc[i].flag == RUN) {
-            
-            // Calcul de la priorité en tenant compte du vieillissement
-            // Plus le processus attend longtemps, plus la priorité augmente
-            temp_priority = Tproc[i].ncpu - (0.2 * Tproc[i].waiting_time);
-            
-            // Sélectionner le processus avec la plus petite priorité (durée CPU ajustée par vieillissement)
-            if (temp_priority < priority) {
-                priority = temp_priority;
-                p = i;
-            }
-        }
-    }
-
-    // Retourner l'indice du processus élu ou -1 si aucun n'est en état RUN
-    return p;
-}
-
-
-Nous avons utilisé un facteur d'augmentation de priorité de 0.2 pour chaque seconde d'attente à titre d'exemple. L'effet de cette modification est que les processus qui attendent longtemps voient leur priorité augmentée, même s'ils ont des durées CPU plus longues et nous avons maintenant la garantie que tous les processus seront finalement exécutés. Plus ce coefficient est important, plus le risque de famine est faible, mais cela diminue l'efficacité de l'algorithme ApproxSJF.
+Désormais, le procédé de vieillissement pour augmenter la priorité d'un processus qui a passé plus ou moins de temps en attente est appliqué sur la nouvelle version de la fonction (voir dans le fichier scen.c). Nous avons utilisé un facteur d'augmentation de priorité de 0.2 pour chaque seconde d'attente à titre d'exemple. L'effet de cette modification est que les processus qui attendent longtemps voient leur priorité augmentée, même s'ils ont des durées CPU plus longues et nous avons maintenant la garantie que tous les processus seront finalement exécutés. Plus ce coefficient est important, plus le risque de famine est faible, mais cela diminue l'efficacité de l'algorithme ApproxSJF.

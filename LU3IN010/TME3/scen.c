@@ -3,13 +3,14 @@
 #include <unistd.h>
 #include <malloc.h>
 #include <sched.h>
+#include <sys/time.h>
 
 #define LONGTIME 8E8
 void ProcLong(int *);
 void ProcCourt(int *);
 
 // Exemple de processus long (une simple bouble),
-// Chaque processus long cr�e a son tour 4 processus courts
+// Chaque processus long crée a son tour 4 processus courts
 //
 void ProcLong(int *pid) {
   long i;
@@ -43,14 +44,14 @@ void ProcCourt(int *pid) {
 
 
 // Exemples de primitive d'election definie par l'utilisateur
-// Remarques : les primitives d'election sont appel�es directement
-//             depuis la librairie. Elles ne sont app�l�es que si au
-//             moins un processus est � l'etat pret (RUN)
+// Remarques : les primitives d'election sont appelées directement
+//             depuis la librairie. Elles ne sont appelées que si au
+//             moins un processus est à l'etat pret (RUN)
 //             Ces primitives manipulent la table globale des processus
-//             d�finie dans sched.h
+//             définie dans sched.h
 
 
-// Election al�atoire
+// Election aléatoire
 int RandomElect(void) {
   int i;
 
@@ -95,19 +96,26 @@ int SJFElect(void) {
 int ApproxSJF(void) {
     int i, p = -1;
     float priority, temp_priority;
+    float coefficient = 1;  // Coefficient pour ajuster le vieillissement
+    struct timeval current_time;  // Variable pour stocker l'heure actuelle
 
-    // Initialiser la priorité la plus faible possible
+    // Obtenir l'heure actuelle
+    gettimeofday(&current_time, NULL);
+
     priority = __FLT_MAX__;
 
-    // Parcourir tous les processus pour trouver celui avec la priorité la plus élevée
+    // Parcourir tous les processus
     for (i = 0; i < MAXPROC; i++) {
         if (Tproc[i].flag == RUN) {
-            
-            // Calcul de la priorité en tenant compte du vieillissement
-            // Plus le processus attend longtemps, plus la priorité augmente
-            temp_priority = Tproc[i].ncpu - (0.2 * Tproc[i].waiting_time);
-            
-            // Sélectionner le processus avec la plus petite priorité (durée CPU ajustée par vieillissement)
+            // Calcul du temps d'attente en utilisant la différence entre l'heure actuelle et le temps de début
+            double waiting_time = (current_time.tv_sec - Tproc[i].realstart_time.tv_sec) +
+                                  (current_time.tv_usec - Tproc[i].realstart_time.tv_usec) / 1000000.0;
+
+
+            // Calcul de la priorité ajustée
+            temp_priority = Tproc[i].ncpu - (coefficient * waiting_time);
+
+            // Sélectionner le processus avec la plus petite priorité
             if (temp_priority < priority) {
                 priority = temp_priority;
                 p = i;
@@ -115,7 +123,7 @@ int ApproxSJF(void) {
         }
     }
 
-    // Retourner l'indice du processus élu ou -1 si aucun n'est en état RUN
+    // Si aucun processus n'est trouvé, on retourne -1
     return p;
 }
 
@@ -124,7 +132,7 @@ int main (int argc, char *argv[]) {
   int i;
   int *j;  
 
-  // Cr�er les processus long
+  // Créer les processus long
   for  (i = 0; i < 2; i++) {
     j = (int *) malloc(sizeof(int));
     *j= i;
@@ -132,9 +140,7 @@ int main (int argc, char *argv[]) {
   }
 
 
-
-  // Definir une nouvelle primitive d'election avec un quantum de 0.5 seconde
-  SchedParam(NEW, 1, RandomElect);
+  SchedParam(NEW, 0, SJFElect);
 
   // Lancer l'ordonnanceur en mode non "verbeux"
   sched(0);     
