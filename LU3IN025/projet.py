@@ -66,22 +66,14 @@ def gale_shapley_etudiants(CE, CP, capacites):
                     etudiants_libres.append(moins_prefere)  # Remettre l'étudiant moins préféré dans la file des libres
                     # Ajouter le nouvel étudiant dans le parcours
                     heapq.heappush(affectations[j], (-classement_parcours[j][i], i))
-                    capacite_restante[j] -= 1  # Réduire la capacité restante
                     break
 
     # Formatage des résultats : on trie les étudiants affectés à chaque parcours
     result = {j: [etudiant for _, etudiant in sorted(affectations[j])] for j in range(m)}
     return result
 
-def gale_shapley_parcours(CE, CP, capacites):
-    """
-    Implémente l'algorithme de Gale-Shapley côté parcours.
 
-    :param CE: Préférences des étudiants.
-    :param CP: Préférences des parcours.
-    :param capacites: Capacités des parcours.
-    :return: Affectations des étudiants aux parcours.
-    """
+def gale_shapley_parcours(CE, CP, capacites):
     n = len(CE)  # Nombre d'étudiants
     m = len(CP)  # Nombre de parcours
 
@@ -119,6 +111,7 @@ def gale_shapley_parcours(CE, CP, capacites):
             parcours_libres.append(parcours)
 
     return affectations
+
 
 # Q6
 def trouver_paires_instables(CE, CP, affectation):
@@ -286,6 +279,7 @@ def tracer_courbes():
     plt.grid(True)
     plt.show()
 
+
 def generate_lp_file_k(n, preferences, capacities, k, filename="problem.lp"):
     """
     Génère un fichier .lp correspondant au PLNE assurant qu'un étudiant obtient un de ses k premiers choix.
@@ -319,47 +313,62 @@ def generate_lp_file_k(n, preferences, capacities, k, filename="problem.lp"):
         
         f.write("End\n")
 
-# Exemple d'utilisation dans le contexte du programme
 def main():
-    # Lecture des préférences
-    CE = lire_pref_etudiants("PrefEtu.txt")
-    CP, capacites = lire_pref_parcours("PrefSpe.txt")
+    while True:
+        print("\n=== Menu Principal ===")
+        print("1. Charger les préférences et exécuter Gale-Shapley (Donnee deviens de Fichers PrefEtu.txt et PrefSpe.txt)")
+        print("2. Générer des préférences aléatoires et afficher les matrices et tracer le graphe")
+        print("3. Générer un fichier LP pour l'affectation (n = 3,Donnee deviens de Fichers PrefEtu.txt et PrefSpe.txt)")
+        print("4. Quitter")
+        
+        choix = input("Votre choix : ")
 
-    # Exécution des algorithmes
-    affectations_etudiants = gale_shapley_etudiants(CE, CP, capacites)
-    affectations_parcours = gale_shapley_parcours(CE, CP, capacites)
+        if choix == "1":
+            # Charger les préférences depuis les fichiers
+            CE = lire_pref_etudiants("PrefEtu.txt")
+            CP, capacites = lire_pref_parcours("PrefSpe.txt")
 
-    # Vérification de la stabilité de l'affectation
-    print("\nVérification de la stabilité de l'affectation (étudiants):")
-    afficher_paires_instables(trouver_paires_instables(CE, CP, affectations_etudiants))
-    
-    print("\nVérification de la stabilité de l'affectation (parcours):")
-    afficher_paires_instables(trouver_paires_instables(CE, CP, affectations_parcours))
+            # Exécuter les algorithmes Gale-Shapley
+            affectations_etudiants = gale_shapley_etudiants(CE, CP, capacites)
+            affectations_parcours = gale_shapley_parcours(CE, CP, capacites)
 
-    # Affichage des résultats finaux
-    afficher_affectations_etudiants("Affectations finales (Côté étudiants)", affectations_etudiants)
-    afficher_affectations_parcours("Affectations finales (Côté parcours)", affectations_parcours)
-    print('\n')
+            # Vérifier la stabilité
+            print("\nVérification de la stabilité de l'affectation (étudiants):")
+            afficher_paires_instables(trouver_paires_instables(CE, CP, affectations_etudiants))
+            
+            print("\nVérification de la stabilité de l'affectation (parcours):")
+            afficher_paires_instables(trouver_paires_instables(CE, CP, affectations_parcours))
 
-    # Q7
-    # Exemple d'utilisation avec 5 étudiants
-    n = 11
-    CE = generer_pref_etudiants(n)
-    CP = generer_pref_parcours(n)
+            # Afficher les résultats finaux
+            afficher_affectations_etudiants("Affectations finales (Côté étudiants)", affectations_etudiants)
+            afficher_affectations_parcours("Affectations finales (Côté parcours)", affectations_parcours)
+        
+        elif choix == "2":
+            # Générer des préférences aléatoires
+            n = int(input("Entrez le nombre d'étudiants : "))
+            CE = generer_pref_etudiants(n)
+            CP = generer_pref_parcours(n)
 
-    # Affichage des matrices générées
-    afficher_matrice("Matrice CE (Préférences des étudiants) :", CE, "Etudiant ")
-    afficher_matrice("Matrice CP (Préférences des parcours) :", CP, "Parcours ")
+            # Afficher les matrices générées
+            afficher_matrice("Matrice CE (Préférences des étudiants) :", CE, "Etudiant ")
+            afficher_matrice("Matrice CP (Préférences des parcours) :", CP, "Parcours ")
 
-    # Exemple d'utilisation (hypothétique)
-    n = 100
-    preferences = {i: list(np.random.permutation(9)) for i in range(n)}
-    capacities = [n // 9] * 9
-    k = 3
-    generate_lp_file_k(n, preferences, capacities, k, "affectation_k3.lp")
+            tracer_courbes()
+        
+        elif choix == "3":
+            # Générer un fichier LP pour l'affectation
+            n = 11
+            preferences = lire_pref_etudiants("PrefEtu.txt")
+            _, capacities = lire_pref_parcours("PrefSpe.txt")
+            k = int(input("Entrez la valeur de k : "))
+            generate_lp_file_k(n, preferences, capacities, k, "affectation_k.lp")
+            print("Fichier LP généré : affectation_k.lp")
+        
+        elif choix == "4":
+            print("Au revoir !")
+            break
+        
+        else:
+            print("Choix invalide, veuillez réessayer.")
 
-# Programme principal
 main()
-
-# Exécuter le tracé
-tracer_courbes()
