@@ -22,8 +22,12 @@ int main(int argc, char *argv[]) {
             exit(1);
         } else if (pid == 0) {
             close(STDOUT_FILENO);
-            open("/dev/null", O_WRONLY);
 
+            //pour seulement afficher dans la stdout l'état des processus terminés (redirection de la sortie standard)
+            if (open("/dev/null", O_WRONLY) == -1) {
+                perror("Erreur lors de l'ouverture de /dev/null");
+                exit(1);
+            }
             execl("/bin/grep", "grep", pattern, argv[i + 2], (char *)NULL);
             fprintf(stderr, "Impossible d'exécuter grep sur le fichier %s.\n", argv[i + 2]);
             exit(1);

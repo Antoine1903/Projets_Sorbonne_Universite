@@ -34,9 +34,12 @@ int main(int argc, char *argv[]) {
                 fprintf(stderr, "Échec de la création du processus.\n");
                 exit(1);
             } else if (pid == 0) {
-                // Rediriger stdout vers /dev/null pour ne rien afficher
+                // Rediriger une nouvelle fois stdout vers /dev/null pour ne rien afficher comme dans l'exercice précédent
                 close(STDOUT_FILENO);
-                open("/dev/null", O_WRONLY);
+                if (open("/dev/null", O_WRONLY) == -1) {
+                    perror("Erreur lors de l'ouverture de /dev/null");
+                    exit(1);
+                }
 
                 execl("/bin/grep", "grep", pattern, argv[prochain_fichier], (char *)NULL);
                 fprintf(stderr, "Impossible d'exécuter grep sur le fichier %s.\n", argv[prochain_fichier]);
