@@ -1,8 +1,8 @@
 # Sorbonne Université 3I024 2024-2025
 # TME 2 : Cryptanalyse du chiffre de Vigenere
 #
-# Etudiant.e 1 : NOM ET NUMERO D'ETUDIANT
-# Etudiant.e 2 : NOM ET NUMERO D'ETUDIANT
+# Etudiant.e 1 : Zhang Yuxiang 21202829
+# Etudiant.e 2 : Lecomte Antoine 21103457
 
 import sys, getopt, string, math
 
