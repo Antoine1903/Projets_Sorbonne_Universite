@@ -97,47 +97,10 @@ class ClassifierKNN(Classifier):
         """
         return 1 if self.score(x) >= 0.5 else -1
 
-class ClassifierLineaireRandom(Classifier):
-    """ Classe pour représenter un classifieur linéaire aléatoire
-        Cette classe hérite de la classe Classifier
-    """
-    
-    def __init__(self, input_dimension):
-        """ Constructeur de Classifier
-            Argument:
-                - intput_dimension (int) : dimension de la description des exemples
-            Hypothèse : input_dimension > 0
-        """
-        Classifier.__init__(self,input_dimension)
-        v = np.random.uniform(-1, 1, input_dimension)
-        self.w = v / np.linalg.norm(v)
-        
-    def train(self, desc_set, label_set):
-        """ Permet d'entrainer le modele sur l'ensemble donné
-            desc_set: ndarray avec des descriptions
-            label_set: ndarray avec les labels correspondants
-            Hypothèse: desc_set et label_set ont le même nombre de lignes
-        """        
-        print("Pas d'apprentissage pour ce classifieur")
-    
-    def score(self,x):
-        """ rend le score de prédiction sur x (valeur réelle)
-            x: une description
-        """
-        return np.dot(x, self.w)
-    
-    def predict(self, x):
-        """ rend la prediction sur x (soit -1 ou soit +1)
-            x: une description
-        """
-        return 1 if self.score(x) >= 0 else -1
-    
-# ------------------------ A COMPLETER : DEFINITION DU CLASSIFIEUR PERCEPTRON
-
 class ClassifierPerceptron(Classifier):
     """ Perceptron de Rosenblatt
     """
-    def __init__(self, input_dimension, learning_rate=0.01, init=True ):
+    def __init__(self, input_dimension, learning_rate=0.01, init=True):
         """ Constructeur de Classifier
             Argument:
                 - input_dimension (int) : dimension de la description des exemples (>0)
@@ -146,14 +109,16 @@ class ClassifierPerceptron(Classifier):
                     - si True (par défaut): initialisation à 0 de w,
                     - si False : initialisation par tirage aléatoire de valeurs petites
         """
-        Classifier.__init__(self,input_dimension)
+        Classifier.__init__(self, input_dimension)
         self.learning_rate = learning_rate
+        
         if init:
             self.w = np.zeros(input_dimension)
         else:
             self.w = (np.random.rand(input_dimension) * 2 - 1) * 0.001
-
         
+        self.allw = [self.w.copy()]  # Stocker les poids initiaux
+
     def train_step(self, desc_set, label_set):
         """ Réalise une unique itération sur tous les exemples du dataset
             donné en prenant les exemples aléatoirement.
@@ -172,7 +137,8 @@ class ClassifierPerceptron(Classifier):
             
             if y_pred_sign != y_i:
                 self.w += self.learning_rate * y_i * x_i
-     
+                self.allw.append(self.w.copy())  # Stocker les poids après chaque mise à jour
+
     def train(self, desc_set, label_set, nb_max=100, seuil=0.001):
         """ Apprentissage itératif du perceptron sur le dataset donné.
             Arguments:
@@ -183,7 +149,6 @@ class ClassifierPerceptron(Classifier):
             Retour: la fonction rend une liste
                 - liste des valeurs de norme de différences
         """        
-        
         differences = []
         
         for _ in range(nb_max):
@@ -193,22 +158,61 @@ class ClassifierPerceptron(Classifier):
             diff = np.linalg.norm(self.w - old_w)
             differences.append(diff)
             
-            if diff < seuil: # on arrete s'il atteint la convergence
+            if diff < seuil:  # Arrêt si convergence
                 break
         
         return differences
     
-    def score(self,x):
-        """ rend le score de prédiction sur x (valeur réelle)
+    def score(self, x):
+        """ Rend le score de prédiction sur x (valeur réelle)
             x: une description
         """
-        return np.dot(self.w,x)
+        return np.dot(self.w, x)
     
     def predict(self, x):
-        """ rend la prediction sur x (soit -1 ou soit +1)
+        """ Rend la prediction sur x (soit -1 ou soit +1)
             x: une description
         """
         return np.sign(self.score(x))
+    
+    def get_allw(self):
+        """ Récupère l'historique des poids """
+        return self.allw
 
-    
-    
+class ClassifierPerceptronBiais(ClassifierPerceptron):
+    """ Perceptron de Rosenblatt avec biais
+        Variante du perceptron de base
+    """
+    def __init__(self, input_dimension, learning_rate=0.01, init=True):
+        """ Constructeur de Classifier
+            Argument:
+                - input_dimension (int) : dimension de la description des exemples (>0)
+                - learning_rate (par défaut 0.01): epsilon
+                - init est le mode d'initialisation de w: 
+                    - si True (par défaut): initialisation à 0 de w,
+                    - si False : initialisation par tirage aléatoire de valeurs petites
+        """
+        # Appel du constructeur de la classe mère
+        super().__init__(input_dimension, learning_rate, init)
+        # Affichage pour information (décommentez pour la mise au point)
+        # print("Init perceptron biais: w= ",self.w," learning rate= ",learning_rate)
+        
+    def train_step(self, desc_set, label_set):
+        """ Réalise une unique itération sur tous les exemples du dataset
+            donné en prenant les exemples aléatoirement.
+            Arguments:
+                - desc_set: ndarray avec des descriptions
+                - label_set: ndarray avec les labels correspondants
+        """  
+        indices = list(range(len(desc_set)))
+        np.random.shuffle(indices)
+        
+        for i in indices:
+            x_i = desc_set[i]
+            y_i = label_set[i]
+            f_xi = np.dot(self.w, x_i)  # Score du perceptron
+            
+            if f_xi * y_i < 1:  # Critère modifié
+                self.w += self.learning_rate * (y_i - f_xi) * x_i
+                self.allw.append(self.w.copy())  # Stocker l'évolution des poids   
+  
