@@ -6,8 +6,7 @@
 
 void creer_arbre(int niveau) {
     if (niveau == 0) {
-        sleep(30); // Chaque processus dort
-        printf("Processus %d terminé (niveau %d)\n", getpid(), niveau);
+        sleep(30);
         return;
     }
 
@@ -15,23 +14,20 @@ void creer_arbre(int niveau) {
 
     gauche = fork();
     if (gauche == 0) {
-        printf("Processus %d créé par %d (gauche, niveau %d)\n", getpid(), getppid(), niveau);
         creer_arbre(niveau - 1);
+        sleep(30);
         exit(0);
     }
 
     droit = fork();
     if (droit == 0) {
-        printf("Processus %d créé par %d (droit, niveau %d)\n", getpid(), getppid(), niveau);
         creer_arbre(niveau - 1);
+        sleep(30);
         exit(0);
     }
 
     wait(NULL);
     wait(NULL);
-
-    sleep(30);
-    printf("Processus %d terminé (niveau %d)\n", getpid(), niveau);
 }
 
 
@@ -47,8 +43,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    printf("Processus racine %d démarré (niveau %d)\n", getpid(), L);
     creer_arbre(L);
-
+    sleep(30);
     return 0;
 }
