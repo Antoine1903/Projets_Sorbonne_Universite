@@ -44,10 +44,6 @@ int main() {
         }
         args[i] = NULL; // Dernier élément NULL pour execvp
 
-        if (args[0] == NULL) {
-            continue; // Commande vide, on reboucle
-        }
-
         struct tms start_time, end_time;
         clock_t start, end;
 

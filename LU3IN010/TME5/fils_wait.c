@@ -6,52 +6,43 @@
 #include <sys/wait.h>
 
 #define MAX_CMD 100
-#define MAX_ARGS 10
 
 int main() {
     char commande[MAX_CMD];
-
     while (1) {
         printf("Entrez une commande : ");
         if (fgets(commande, MAX_CMD, stdin) == NULL) {
             perror("Erreur de lecture");
             continue;
         }
-
+        
+        // Supprimer le saut de ligne
         commande[strcspn(commande, "\n")] = 0;
-
+        
+        // Vérifier si on doit quitter
         if (strcmp(commande, "quit") == 0) {
             break;
         }
-
+        
         int attendre = 1;
         int len = strlen(commande);
         if (len > 0 && commande[len - 1] == '&') {
             attendre = 0;
-            commande[len - 1] = '\0';
+            commande[len - 1] = '\0'; // Supprimer le '&' de la commande
         }
-
-        char *args[MAX_ARGS];
-        int i = 0;
-        char *token = strtok(commande, " ");
-        while (token != NULL && i < MAX_ARGS - 1) {
-            args[i++] = token;
-            token = strtok(NULL, " ");
-        }
-        args[i] = NULL;
-
+        
         pid_t pid = fork();
         if (pid < 0) {
             perror("Erreur de fork");
             continue;
         }
-
+        
         if (pid == 0) {
-            execvp(args[0], args);
+            execlp(commande, commande, NULL);
             perror("Erreur d'exécution");
             exit(1);
         }
-
+        
         if (attendre) {
             waitpid(pid, NULL, 0);
         }

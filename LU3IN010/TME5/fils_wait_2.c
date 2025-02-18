@@ -43,10 +43,6 @@ int main() {
         }
         args[i] = NULL; // Dernier élément NULL pour execvp
 
-        if (args[0] == NULL) {
-            continue; // Commande vide, on reboucle
-        }
-
         pid_t pid = fork();
         if (pid < 0) {
             perror("Erreur de fork");
