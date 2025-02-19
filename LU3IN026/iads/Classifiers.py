@@ -215,4 +215,53 @@ class ClassifierPerceptronBiais(ClassifierPerceptron):
             if f_xi * y_i < 1:  # Critère modifié
                 self.w += self.learning_rate * (y_i - f_xi) * x_i
                 self.allw.append(self.w.copy())  # Stocker l'évolution des poids   
-  
+                
+class ClassifierMultiOAA(Classifier):
+    """ Classifieur multi-classes
+    """
+    def __init__(self, cl_bin):
+        """ Constructeur de Classifier
+            Argument:
+                - input_dimension (int) : dimension de la description des exemples (espace originel)
+                - cl_bin: classifieur binaire positif/négatif
+            Hypothèse : input_dimension > 0
+        """
+        self.cl_bin = cl_bin
+        self.models = {}
+        self.classes = None
+        
+        
+    def train(self, desc_set, label_set):
+        """ Permet d'entrainer le modele sur l'ensemble donné
+            réalise une itération sur l'ensemble des données prises aléatoirement
+            desc_set: ndarray avec des descriptions
+            label_set: ndarray avec les labels correspondants
+            Hypothèse: desc_set et label_set ont le même nombre de lignes
+        """        
+        self.classes = np.unique(label_set)
+        
+        for c in self.classes:
+            # Créer une version binaire des labels : +1 pour la classe c, -1 pour les autres
+            labels_bin = np.where(label_set == c, 1, -1)
+            
+            # Créer une copie du classifieur binaire et l'entraîner
+            cl_bin_copy = copy.deepcopy(self.cl_bin)
+            cl_bin_copy.train(desc_set, labels_bin)  # Entraînement sur les données
+            self.models[c] = cl_bin_copy  # Stocker le classifieur pour la classe c
+        
+    
+    def score(self,x):
+        """ rend le score de prédiction sur x (valeur réelle)
+            x: une description
+        """
+        scores = {}
+        for c, model in self.models.items():
+            scores[c] = model.score(x)  # Calculer le score du classifieur pour la classe c
+        return scores
+        
+    def predict(self, x):
+        """ rend la prediction sur x (soit -1 ou soit +1)
+            x: une description
+        """
+        scores = self.score(x)  # Calculer les scores pour chaque classe
+        return max(scores, key=scores.get)  # Retourner la classe ayant le score maximal
