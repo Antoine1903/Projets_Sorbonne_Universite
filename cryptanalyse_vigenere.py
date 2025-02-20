@@ -15,12 +15,12 @@ alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 freq_FR = [0.092060, 0.010360, 0.030219, 0.037547, 0.171768, 0.010960, 0.010608, 0.010718, 0.075126, 0.003824, 0.000070, 0.061318, 0.026482, 0.070310, 0.049171, 0.023706, 0.010156, 0.066094, 0.078126, 0.073770, 0.063540, 0.016448, 0.000011, 0.004080, 0.002296, 0.001231]
 
 # Chiffrement César
-def chiffre_cesar(txt, key):
+def chiffre_cesar(cipher, key):
     """
     Documentation à écrire
     """
     encrypted_text = ""
-    for char in txt:
+    for char in cipher:
         if char.isalpha():
             start = ord('A') if char.isupper() else ord('a')
             encrypted_char = chr((ord(char) - start + key) % 26 + start)
@@ -30,12 +30,12 @@ def chiffre_cesar(txt, key):
     return encrypted_text
 
 # Déchiffrement César
-def dechiffre_cesar(txt, key):
+def dechiffre_cesar(cipher, key):
     """
     Documentation à écrire
     """
     decrypted_text = ""
-    for char in txt:
+    for char in cipher:
         if char.isalpha():
             start = ord('A') if char.isupper() else ord('a')
             decrypted_char = chr((ord(char) - start - key) % 26 + start)
@@ -45,10 +45,10 @@ def dechiffre_cesar(txt, key):
     return decrypted_text
 
 # Chiffrement Vigenere
-def chiffre_vigenere(txt, key):
+def chiffre_vigenere(cipher, key):
     """
     Chiffrement de Vigenère
-    :param txt: Texte clair (str)
+    :param cipher: Texte clair (str)
     :param key: Clé (str ou liste d'entiers)
     :return: Texte chiffré (str)
     """
@@ -62,7 +62,7 @@ def chiffre_vigenere(txt, key):
     
     key_length = len(key_shifts)
     
-    for i, char in enumerate(txt):
+    for i, char in enumerate(cipher):
         if char.isalpha():
             start = ord('A') if char.isupper() else ord('a')
             shift = key_shifts[i % key_length]  # Utilisation de la clé sous forme de décalage numérique
@@ -74,10 +74,10 @@ def chiffre_vigenere(txt, key):
     return encrypted_text
 
 # Déchiffrement Vigenere
-def dechiffre_vigenere(txt, key):
+def dechiffre_vigenere(cipher, key):
     """
     Déchiffrement de Vigenère
-    :param txt: Texte chiffré (str)
+    :param cipher: Texte chiffré (str)
     :param key: Clé (str ou liste d'entiers)
     :return: Texte déchiffré (str)
     """
@@ -91,7 +91,7 @@ def dechiffre_vigenere(txt, key):
     
     key_length = len(key_shifts)
     
-    for i, char in enumerate(txt):
+    for i, char in enumerate(cipher):
         if char.isalpha():
             start = ord('A') if char.isupper() else ord('a')
             shift = key_shifts[i % key_length]
@@ -104,12 +104,12 @@ def dechiffre_vigenere(txt, key):
 
 
 # Analyse de fréquences
-def freq(txt):
+def freq(cipher):
     """
     Calcule la fréquence d'apparition de chaque lettre de l'alphabet dans un texte donné.
     
     Paramètres :
-        txt (str) : Le texte à analyser
+        cipher (str) : Le texte à analyser
     
     Retourne :
         list : Une liste contenant le nombre d'occurrences de chaque lettre de l'alphabet (en ordre)
@@ -117,9 +117,9 @@ def freq(txt):
     alphabet = "abcdefghijklmnopqrstuvwxyz"
     hist = [0.0] * len(alphabet)
     
-    txt = txt.lower()  # Convertir en minuscules pour uniformiser
+    cipher = cipher.lower()  # Convertir en minuscules pour uniformiser
     
-    for char in txt:
+    for char in cipher:
         if char in alphabet:
             hist[alphabet.index(char)] += 1
     
@@ -127,18 +127,18 @@ def freq(txt):
 
 # Renvoie l'indice dans l'alphabet
 # de la lettre la plus fréquente d'un texte
-def lettre_freq_max(txt):
+def lettre_freq_max(cipher):
     """
     Renvoie l'indice dans l'alphabet de la lettre la plus fréquente d'un texte.
     Si plusieurs lettres ont la même fréquence maximale, renvoie la première dans l'ordre alphabétique.
     
     Paramètres :
-        txt (str) : Le texte à analyser
+        cipher (str) : Le texte à analyser
     
     Retourne :
         int : L'indice de la lettre la plus fréquente dans l'alphabet
     """
-    hist = freq(txt)
+    hist = freq(cipher)
     max_freq = max(hist)
     return hist.index(max_freq)
 
@@ -161,13 +161,13 @@ def indice_coincidence(hist):
     return ic
 
 # Recherche la longueur de la clé
-def longueur_clef(txt, max_len=20):
+def longueur_clef(cipher, max_len=20):
     """
     Détermine la longueur probable de la clé utilisée pour chiffrer un texte avec Vigenère.
     On teste toutes les tailles de clé possibles jusqu'à max_len et on calcule l'indice de coïncidence moyen.
     La bonne taille est celle où l'IC moyen dépasse 0.06.
     
-    :param txt: Texte chiffré (str)
+    :param cipher: Texte chiffré (str)
     :param max_len: Longueur maximale de clé à tester (int, par défaut 20)
     :return: Longueur estimée de la clé (int)
     """
@@ -180,7 +180,7 @@ def longueur_clef(txt, max_len=20):
         
         # Diviser le texte en colonnes selon la longueur de clé testée
         for i in range(key_len):
-            colonne = "".join(txt[j] for j in range(i, len(txt), key_len) if txt[j] in alphabet)
+            colonne = "".join(cipher[j] for j in range(i, len(cipher), key_len) if cipher[j] in alphabet)
             if colonne:  # S'assurer que la colonne n'est pas vide
                 hist = freq(colonne)  # Utiliser la fonction freq pour calculer l'histogramme
                 ic_values.append(indice_coincidence(hist))
@@ -234,29 +234,28 @@ def clef_par_decalages(cipher, key_length):
 # Cryptanalyse V1 avec décalages par frequence max
 def cryptanalyse_v1(cipher):
     """
-    Effectue une première analyse du texte chiffré en utilisant l'indice de coïncidence
-    pour estimer la longueur de la clé, puis en déduisant la clé avec l'analyse des fréquences.
+    Effectue une cryptanalyse basique du chiffre de Vigenère en déterminant la clé
+    et en déchiffrant le texte chiffré.
     
     Paramètres :
         cipher (str) : Le texte chiffré
     
     Retourne :
-        str : La clé estimée sous forme de chaîne de caractères
-    
-    Limites :
-    - La méthode suppose que la lettre la plus fréquente dans chaque colonne correspond à 'E'.
-    - Si le texte est trop court ou si la distribution des lettres n'est pas typique, l'analyse peut échouer.
-    - Certains textes plus complexes nécessitent des méthodes plus avancées pour une cryptanalyse efficace.
+        str : Le texte déchiffré
     """
-    alphabet = "abcdefghijklmnopqrstuvwxyz"
+    # Étape 1 : Déterminer la longueur de la clé
     key_length = longueur_clef(cipher)
-    if key_length == 0:
-        return ""
     
+    if key_length is None:
+        return "Impossible de déterminer la longueur de la clé."
+    
+    # Étape 2 : Déterminer la clé sous forme de décalages
     key_shifts = clef_par_decalages(cipher, key_length)
-    key = "".join(alphabet[shift] for shift in key_shifts)
     
-    return key
+    # Étape 3 : Déchiffrer le texte avec la clé trouvée
+    decrypted_text = dechiffre_vigenere(cipher, key_shifts)
+    
+    return decrypted_text
 
 ################################################################
 
