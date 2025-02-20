@@ -114,10 +114,7 @@ def freq(cipher):
     Retourne :
         list : Une liste contenant le nombre d'occurrences de chaque lettre de l'alphabet (en ordre)
     """
-    alphabet = "abcdefghijklmnopqrstuvwxyz"
     hist = [0.0] * len(alphabet)
-    
-    cipher = cipher.lower()  # Convertir en minuscules pour uniformiser
     
     for char in cipher:
         if char in alphabet:
@@ -171,7 +168,6 @@ def longueur_clef(cipher, max_len=20):
     :param max_len: Longueur maximale de clé à tester (int, par défaut 20)
     :return: Longueur estimée de la clé (int)
     """
-    alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     best_length = 1
     best_ic = 0.0
     
@@ -214,7 +210,6 @@ def clef_par_decalages(cipher, key_length):
     Retourne :
         list : Une liste d'entiers représentant les décalages de la clé
     """
-    alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     reference_letter = 'E'
     ref_index = alphabet.index(reference_letter)
     
@@ -333,8 +328,6 @@ def cryptanalyse_v2(cipher):
     Retourne :
         str : La clé estimée sous forme de chaîne de caractères
     """
-    alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    
     key_length = longueur_clef(cipher)
     if key_length == 0:
         return ""
@@ -389,8 +382,6 @@ def clef_correlations(cipher, key_length):
     Retourne :
         tuple : (moyenne des corrélations, liste des décalages)
     """
-    alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    
     colonnes = ["".join(cipher[j] for j in range(i, len(cipher), key_length) if cipher[j] in alphabet)
                 for i in range(key_length)]
     
@@ -425,8 +416,6 @@ def cryptanalyse_v3(cipher):
     Retourne :
         str : La clé estimée sous forme de chaîne de caractères
     """
-    alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    
     best_key, best_score = "", 0.0
     
     for key_length in range(1, 21):
