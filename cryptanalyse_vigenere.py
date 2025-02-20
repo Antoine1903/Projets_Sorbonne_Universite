@@ -205,18 +205,58 @@ def longueur_clef(txt, max_len=20):
 # de chaque colonne
 def clef_par_decalages(cipher, key_length):
     """
-    Documentation à écrire
+    Détermine la clé sous forme d'une table de décalages en supposant que la lettre la plus fréquente est 'E'.
+    
+    Paramètres :
+        cipher (str) : Le texte chiffré
+        key_length (int) : La longueur de la clé estimée
+    
+    Retourne :
+        list : Une liste d'entiers représentant les décalages de la clé
     """
-    decalages=[0]*key_length
-    return decalages
+    alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    reference_letter = 'E'
+    ref_index = alphabet.index(reference_letter)
+    
+    key_shifts = []
+    
+    for i in range(key_length):
+        colonne = "".join(cipher[j] for j in range(i, len(cipher), key_length) if cipher[j] in alphabet)
+        
+        if colonne:
+            most_freq_index = lettre_freq_max(colonne)  # Trouver la lettre la plus fréquente
+            shift = (most_freq_index - ref_index) % len(alphabet)  # Calculer le décalage
+            key_shifts.append(shift)
+    
+    return key_shifts
+
 
 # Cryptanalyse V1 avec décalages par frequence max
 def cryptanalyse_v1(cipher):
     """
-    Documentation à écrire
+    Effectue une première analyse du texte chiffré en utilisant l'indice de coïncidence
+    pour estimer la longueur de la clé, puis en déduisant la clé avec l'analyse des fréquences.
+    
+    Paramètres :
+        cipher (str) : Le texte chiffré
+    
+    Retourne :
+        str : La clé estimée sous forme de chaîne de caractères
+    
+    Limites :
+    - La méthode suppose que la lettre la plus fréquente dans chaque colonne correspond à 'E'.
+    - Si le texte est trop court ou si la distribution des lettres n'est pas typique, l'analyse peut échouer.
+    - Certains textes plus complexes nécessitent des méthodes plus avancées pour une cryptanalyse efficace.
     """
-    return "TODO"
-
+    alphabet = "abcdefghijklmnopqrstuvwxyz"
+    key_length = longueur_clef(cipher)
+    if key_length == 0:
+        return ""
+    
+    key_shifts = clef_par_decalages(cipher, key_length)
+    key = "".join(alphabet[shift] for shift in key_shifts)
+    
+    return key
 
 ################################################################
 
