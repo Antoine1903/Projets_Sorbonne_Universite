@@ -296,7 +296,6 @@ def tableau_decalages_ICM(cipher, key_length):
     Retourne :
         list : Une liste d'entiers représentant les décalages de la clé
     """
-    alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     colonnes = ["".join(cipher[j] for j in range(i, len(cipher), key_length) if cipher[j] in alphabet)
                 for i in range(key_length)]
     
@@ -319,24 +318,42 @@ def tableau_decalages_ICM(cipher, key_length):
 # Cryptanalyse V2 avec décalages par ICM
 def cryptanalyse_v2(cipher):
     """
-    Effectue une cryptanalyse en utilisant l'indice de coïncidence mutuelle pour 
-    retrouver les décalages relatifs des colonnes et en les analysant comme un chiffrement de César.
-
-    Paramètres :
-        cipher (str) : Le texte chiffré
+    Effectue la cryptanalyse du chiffre de Vigenère avec l'ICM pour retrouver la clé et déchiffrer le message.
+    
+    Paramètre :
+        cipher (str) : Texte chiffré
     
     Retourne :
-        str : La clé estimée sous forme de chaîne de caractères
+        tuple : (clé estimée, texte déchiffré)
     """
+    # 1. Déterminer la longueur probable de la clé
     key_length = longueur_clef(cipher)
-    if key_length == 0:
-        return ""
-
+    
+    # 2. Trouver les décalages des colonnes
     decalages = tableau_decalages_ICM(cipher, key_length)
     
-    key = "".join(alphabet[d] for d in decalages)
+    # 3. Déduire la clé en prenant la lettre la plus fréquente dans chaque colonne
+    clef = ""
+    for i in range(key_length):
+        colonne = [cipher[j] for j in range(i, len(cipher), key_length) if cipher[j] in alphabet]
+        if colonne:
+            histo = freq("".join(colonne))
+            lettre_plus_frequente = histo.index(max(histo))  # Trouver la lettre la plus fréquente
+            shift = (lettre_plus_frequente - (ord('E') - ord('A'))) % 26  # Supposer que 'E' est la plus fréquente
+            clef += alphabet[shift]
+        else:
+            clef += 'A'  # Valeur par défaut en cas de problème
     
-    return key
+    # 4. Déchiffrer le texte avec la clé trouvée
+    texte_dechiffre = []
+    for i, c in enumerate(cipher):
+        if c in alphabet:
+            shift = ord(clef[i % key_length]) - ord('A')
+            texte_dechiffre.append(alphabet[(ord(c) - ord('A') - shift) % 26])
+        else:
+            texte_dechiffre.append(c)
+    
+    return clef, "".join(texte_dechiffre)
 
 
 ################################################################
