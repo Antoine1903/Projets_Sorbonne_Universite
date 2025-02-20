@@ -106,32 +106,89 @@ def dechiffre_vigenere(txt, key):
 # Analyse de fréquences
 def freq(txt):
     """
-    Documentation à écrire
+    Calcule la fréquence d'apparition de chaque lettre de l'alphabet dans un texte donné.
+    
+    Paramètres :
+        txt (str) : Le texte à analyser
+    
+    Retourne :
+        list : Une liste contenant le nombre d'occurrences de chaque lettre de l'alphabet (en ordre)
     """
-    hist=[0.0]*len(alphabet)
+    alphabet = "abcdefghijklmnopqrstuvwxyz"
+    hist = [0.0] * len(alphabet)
+    
+    txt = txt.lower()  # Convertir en minuscules pour uniformiser
+    
+    for char in txt:
+        if char in alphabet:
+            hist[alphabet.index(char)] += 1
+    
     return hist
 
 # Renvoie l'indice dans l'alphabet
 # de la lettre la plus fréquente d'un texte
 def lettre_freq_max(txt):
     """
-    Documentation à écrire
+    Renvoie l'indice dans l'alphabet de la lettre la plus fréquente d'un texte.
+    Si plusieurs lettres ont la même fréquence maximale, renvoie la première dans l'ordre alphabétique.
+    
+    Paramètres :
+        txt (str) : Le texte à analyser
+    
+    Retourne :
+        int : L'indice de la lettre la plus fréquente dans l'alphabet
     """
-    return 0
+    hist = freq(txt)
+    max_freq = max(hist)
+    return hist.index(max_freq)
 
 # indice de coïncidence
 def indice_coincidence(hist):
     """
-    Documentation à écrire
+    Calcule l'indice de coïncidence d'un texte à partir de son histogramme de fréquences.
+    
+    Paramètres :
+        hist (list) : Une liste contenant le nombre d'occurrences de chaque lettre de l'alphabet
+    
+    Retourne :
+        float : L'indice de coïncidence du texte
     """
-    return 0.0
+    n = sum(hist)  # Nombre total de lettres dans le texte
+    if n <= 1:
+        return 0.0  # Éviter la division par zéro
+    
+    ic = sum(ni * (ni - 1) for ni in hist) / (n * (n - 1))
+    return ic
 
 # Recherche la longueur de la clé
 def longueur_clef(cipher):
     """
-    Documentation à écrire
+    Détermine la longueur probable de la clé en utilisant l'indice de coïncidence.
+    
+    Paramètres :
+        cipher (str) : Le texte chiffré
+    
+    Retourne :
+        int : La longueur estimée de la clé
     """
+    max_k = 20
+    seuil_ic = 0.06
+    alphabet = "abcdefghijklmnopqrstuvwxyz"
+    
+    for k in range(1, max_k + 1):
+        ic_moyen = 0
+        for i in range(k):
+            colonne = "".join(cipher[j] for j in range(i, len(cipher), k) if cipher[j] in alphabet)
+            if colonne:
+                hist = freq(colonne)
+                ic_moyen += indice_coincidence(hist)
+        
+        ic_moyen /= k
+        if ic_moyen > seuil_ic:
+            return k
+    
     return 0
+
     
 # Renvoie le tableau des décalages probables étant
 # donné la longueur de la clé
