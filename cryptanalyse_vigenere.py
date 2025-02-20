@@ -333,27 +333,26 @@ def cryptanalyse_v2(cipher):
     decalages = tableau_decalages_ICM(cipher, key_length)
     
     # 3. Déduire la clé en prenant la lettre la plus fréquente dans chaque colonne
+    colonnes = ["".join(cipher[j] for j in range(i, len(cipher), key_length) if cipher[j] in alphabet)
+                for i in range(key_length)]
+    
     clef = ""
     for i in range(key_length):
-        colonne = [cipher[j] for j in range(i, len(cipher), key_length) if cipher[j] in alphabet]
-        if colonne:
-            histo = freq("".join(colonne))
-            lettre_plus_frequente = histo.index(max(histo))  # Trouver la lettre la plus fréquente
-            shift = (lettre_plus_frequente - (ord('E') - ord('A'))) % 26  # Supposer que 'E' est la plus fréquente
-            clef += alphabet[shift]
-        else:
-            clef += 'A'  # Valeur par défaut en cas de problème
+        histo = freq(colonnes[i])
+        lettre_plus_frequente = histo.index(max(histo))  # Trouver la lettre la plus fréquente
+        shift = (lettre_plus_frequente - (ord('E') - ord('A'))) % 26  # Supposer que 'E' est la plus fréquente
+        clef += alphabet[shift]
     
     # 4. Déchiffrer le texte avec la clé trouvée
-    texte_dechiffre = []
+    texte_dechiffre = ""
     for i, c in enumerate(cipher):
         if c in alphabet:
             shift = ord(clef[i % key_length]) - ord('A')
-            texte_dechiffre.append(alphabet[(ord(c) - ord('A') - shift) % 26])
+            texte_dechiffre += alphabet[(ord(c) - ord('A') - shift) % 26]
         else:
-            texte_dechiffre.append(c)
+            texte_dechiffre += c
     
-    return clef, "".join(texte_dechiffre)
+    return clef, texte_dechiffre
 
 
 ################################################################
