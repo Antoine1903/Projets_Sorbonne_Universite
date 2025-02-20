@@ -265,11 +265,26 @@ def cryptanalyse_v1(cipher):
 ### pour la cryptanalyse V2.
 
 # Indice de coincidence mutuelle avec décalage
-def indice_coincidence_mutuelle(h1,h2,d):
+def indice_coincidence_mutuelle(h1, h2, d):
     """
-    Documentation à écrire
+    Calcule l'indice de coïncidence mutuelle entre deux histogrammes de fréquences,
+    en testant un décalage de d positions.
+
+    Paramètres :
+        h1 (list) : Histogramme des fréquences de la première colonne
+        h2 (list) : Histogramme des fréquences de la seconde colonne
+        d (int) : Décalage testé
+    
+    Retourne :
+        float : L'indice de coïncidence mutuelle
     """
-    return 0.0
+    N1, N2 = sum(h1), sum(h2)
+    if N1 == 0 or N2 == 0:
+        return 0.0  # Éviter la division par zéro
+
+    icm = sum(h1[i] * h2[(i + d) % 26] for i in range(26)) / (N1 * N2)
+    return icm
+
 
 # Renvoie le tableau des décalages probables étant
 # donné la longueur de la clé
@@ -277,17 +292,59 @@ def indice_coincidence_mutuelle(h1,h2,d):
 # à la première colonne
 def tableau_decalages_ICM(cipher, key_length):
     """
-    Documentation à écrire
+    Détermine les décalages relatifs des colonnes par rapport à la première colonne
+    en maximisant l'indice de coïncidence mutuelle.
+
+    Paramètres :
+        cipher (str) : Le texte chiffré
+        key_length (int) : La longueur de la clé estimée
+    
+    Retourne :
+        list : Une liste d'entiers représentant les décalages de la clé
     """
-    decalages=[0]*key_length
+    alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    colonnes = ["".join(cipher[j] for j in range(i, len(cipher), key_length) if cipher[j] in alphabet)
+                for i in range(key_length)]
+    
+    # Calculer les histogrammes des colonnes
+    histos = [freq(col) for col in colonnes]
+    
+    decalages = [0]  # La première colonne est la référence
+    
+    for i in range(1, key_length):
+        best_d, best_icm = 0, 0.0
+        for d in range(26):  # Tester tous les décalages possibles
+            icm = indice_coincidence_mutuelle(histos[0], histos[i], d)
+            if icm > best_icm:
+                best_icm, best_d = icm, d
+        decalages.append(best_d)
+    
     return decalages
+
 
 # Cryptanalyse V2 avec décalages par ICM
 def cryptanalyse_v2(cipher):
     """
-    Documentation à écrire
+    Effectue une cryptanalyse en utilisant l'indice de coïncidence mutuelle pour 
+    retrouver les décalages relatifs des colonnes et en les analysant comme un chiffrement de César.
+
+    Paramètres :
+        cipher (str) : Le texte chiffré
+    
+    Retourne :
+        str : La clé estimée sous forme de chaîne de caractères
     """
-    return "TODO"
+    alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    
+    key_length = longueur_clef(cipher)
+    if key_length == 0:
+        return ""
+
+    decalages = tableau_decalages_ICM(cipher, key_length)
+    
+    key = "".join(alphabet[d] for d in decalages)
+    
+    return key
 
 
 ################################################################
@@ -298,28 +355,87 @@ def cryptanalyse_v2(cipher):
 
 # Prend deux listes de même taille et
 # calcule la correlation lineaire de Pearson
-def correlation(L1,L2):
+def correlation(L1, L2):
     """
-    Documentation à écrire
+    Calcule la corrélation de Pearson entre deux listes de même taille.
+
+    Paramètres :
+        L1 (list) : Première liste
+        L2 (list) : Seconde liste
+    
+    Retourne :
+        float : Coefficient de corrélation de Pearson
     """
-    return 0.0
+    if len(L1) != len(L2) or len(L1) == 0:
+        return 0.0
+
+    mean1, mean2 = sum(L1) / len(L1), sum(L2) / len(L2)
+    
+    num = sum((L1[i] - mean1) * (L2[i] - mean2) for i in range(len(L1)))
+    denom = math.sqrt(sum((L1[i] - mean1) ** 2 for i in range(len(L1))) * 
+                      sum((L2[i] - mean2) ** 2 for i in range(len(L2))))
+    
+    return num / denom if denom != 0 else 0.0
 
 # Renvoie la meilleur clé possible par correlation
 # étant donné une longueur de clé fixée
 def clef_correlations(cipher, key_length):
     """
-    Documentation à écrire
+    Trouve la clé qui maximise la corrélation avec un texte français.
+
+    Paramètres :
+        cipher (str) : Le texte chiffré
+        key_length (int) : La longueur de la clé estimée
+    
+    Retourne :
+        tuple : (moyenne des corrélations, liste des décalages)
     """
-    key=[0]*key_length
-    score = 0.0
-    return (score, key)
+    alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    
+    colonnes = ["".join(cipher[j] for j in range(i, len(cipher), key_length) if cipher[j] in alphabet)
+                for i in range(key_length)]
+    
+    histos = [freq(col) for col in colonnes]
+    
+    best_shifts = []
+    best_corrs = []
+    
+    for hist in histos:
+        best_d, best_corr = 0, -1
+        for d in range(26):
+            shifted_hist = hist[d:] + hist[:d]  # Décalage circulaire
+            corr = correlation(shifted_hist, freq_FR)
+            if corr > best_corr:
+                best_corr, best_d = corr, d
+        
+        best_corrs.append(best_corr)
+        best_shifts.append(best_d)
+
+    return (sum(best_corrs) / key_length, best_shifts)
+
 
 # Cryptanalyse V3 avec correlations
 def cryptanalyse_v3(cipher):
     """
-    Documentation à écrire
+    Effectue une cryptanalyse en utilisant la corrélation de Pearson pour trouver 
+    la meilleure taille de clé et ses décalages.
+
+    Paramètres :
+        cipher (str) : Le texte chiffré
+    
+    Retourne :
+        str : La clé estimée sous forme de chaîne de caractères
     """
-    return "TODO"
+    alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    
+    best_key, best_score = "", 0.0
+    
+    for key_length in range(1, 21):
+        score, shifts = clef_correlations(cipher, key_length)
+        if score > best_score:
+            best_score, best_key = score, "".join(alphabet[d] for d in shifts)
+    
+    return best_key
 
 
 ################################################################
