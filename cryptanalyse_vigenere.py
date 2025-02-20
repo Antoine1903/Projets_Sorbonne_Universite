@@ -161,33 +161,42 @@ def indice_coincidence(hist):
     return ic
 
 # Recherche la longueur de la clé
-def longueur_clef(cipher):
+def longueur_clef(txt, max_len=20):
     """
-    Détermine la longueur probable de la clé en utilisant l'indice de coïncidence.
+    Détermine la longueur probable de la clé utilisée pour chiffrer un texte avec Vigenère.
+    On teste toutes les tailles de clé possibles jusqu'à max_len et on calcule l'indice de coïncidence moyen.
+    La bonne taille est celle où l'IC moyen dépasse 0.06.
     
-    Paramètres :
-        cipher (str) : Le texte chiffré
-    
-    Retourne :
-        int : La longueur estimée de la clé
+    :param txt: Texte chiffré (str)
+    :param max_len: Longueur maximale de clé à tester (int, par défaut 20)
+    :return: Longueur estimée de la clé (int)
     """
-    max_k = 20
-    seuil_ic = 0.06
-    alphabet = "abcdefghijklmnopqrstuvwxyz"
+    alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    best_length = 1
+    best_ic = 0.0
     
-    for k in range(1, max_k + 1):
-        ic_moyen = 0
-        for i in range(k):
-            colonne = "".join(cipher[j] for j in range(i, len(cipher), k) if cipher[j] in alphabet)
-            if colonne:
-                hist = freq(colonne)
-                ic_moyen += indice_coincidence(hist)
+    for key_len in range(1, max_len + 1):
+        ic_values = []
         
-        ic_moyen /= k
-        if ic_moyen > seuil_ic:
-            return k
+        # Diviser le texte en colonnes selon la longueur de clé testée
+        for i in range(key_len):
+            colonne = "".join(txt[j] for j in range(i, len(txt), key_len) if txt[j] in alphabet)
+            if colonne:  # S'assurer que la colonne n'est pas vide
+                hist = freq(colonne)  # Utiliser la fonction freq pour calculer l'histogramme
+                ic_values.append(indice_coincidence(hist))
+        
+        # Calculer la moyenne des IC des colonnes
+        if ic_values:
+            ic_moyen = sum(ic_values) / len(ic_values)
+            if ic_moyen > 0.06:  # Seuil indicatif pour une langue naturelle
+                return key_len
+            
+            # Sauvegarde la meilleure valeur trouvée au cas où
+            if ic_moyen > best_ic:
+                best_ic = ic_moyen
+                best_length = key_len
     
-    return 0
+    return best_length
 
     
 # Renvoie le tableau des décalages probables étant
