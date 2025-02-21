@@ -319,24 +319,52 @@ def tableau_decalages_ICM(cipher, key_length):
 def cryptanalyse_v2(cipher):
     """
     Déchiffre un texte chiffré par le chiffrement de Vigenère en utilisant l'analyse de l'indice de coïncidence mutuelle.
-    
+    Recherche également la meilleure clé en fonction des décalages.
+
     Paramètre :
         cipher (str) : Le texte chiffré
     
     Retourne :
         str : Le texte déchiffré
     """
-    # Estimation de la longueur de la clé
-    key_length = longueur_clef(cipher)  # La longueur de la clé est estimée
+    best_avg_icm = -1  # Meilleure moyenne d'ICM
+    best_key = None
+    best_shifts = None
+    best_key_length = 0
+
+    # Tester pour chaque longueur de clé possible
+    for key_length in range(1, 21):  # Longueur de la clé entre 1 et 20
+        # 1. Calculer les décalages pour cette longueur de clé
+        decalages = tableau_decalages_ICM(cipher, key_length)
+        
+        # 2. Calculer l'ICM moyen pour cette longueur de clé
+        histos = [freq(cipher[i::key_length]) for i in range(key_length)]  # Histogrammes des colonnes
+        icms = []
+
+        for i in range(1, key_length):
+            best_icm = -1
+            for d in range(26):  # Tester tous les décalages possibles
+                icm = indice_coincidence_mutuelle(histos[0], histos[i], d)
+                if icm > best_icm:
+                    best_icm = icm
+            if best_icm != -1:
+                icms.append(best_icm)  # Ajouter seulement si on trouve un icm valide
+        
+        # Calculer la moyenne des ICMS si icms n'est pas vide
+        if icms:
+            avg_icm = sum(icms) / len(icms)  # Moyenne des ICMS pour cette longueur de clé
+        else:
+            avg_icm = 0  # Si aucun ICM n'est calculé, mettre la moyenne à 0
+        
+        # Si la moyenne de l'ICM est meilleure, on garde cette longueur de clé
+        if avg_icm > best_avg_icm:
+            best_avg_icm = avg_icm
+            best_key_length = key_length
+            best_shifts = decalages
+            best_key = "".join(chr(65 + d) for d in decalages)  # Clé reconstruite en lettres majuscules
     
-    # 1. Déterminer les décalages par rapport à la première colonne
-    decalages = tableau_decalages_ICM(cipher, key_length)
-    
-    # 2. Reconstituer la clé à partir des décalages
-    cle = "".join(chr(65 + d) for d in decalages)  # Clé reconstruite en lettres majuscules
-    
-    # 3. Déchiffrer le texte avec la clé obtenue
-    texte_dechiffre = dechiffre_vigenere(cipher, cle)
+    # 3. Déchiffrer le texte avec la meilleure clé trouvée
+    texte_dechiffre = dechiffre_vigenere(cipher, best_key)
     
     return texte_dechiffre
 
@@ -409,23 +437,34 @@ def clef_correlations(cipher, key_length):
 # Cryptanalyse V3 avec correlations
 def cryptanalyse_v3(cipher):
     """
-    Effectue une cryptanalyse en utilisant la corrélation de Pearson pour trouver 
-    la meilleure taille de clé et ses décalages.
-
+    Effectue la cryptanalyse V3 pour retrouver la clé de Vigenère d'un texte chiffré.
+    
     Paramètres :
         cipher (str) : Le texte chiffré
     
     Retourne :
-        str : La clé estimée sous forme de chaîne de caractères
+        str : Le texte déchiffré
     """
-    best_key, best_score = "", 0.0
+    best_avg_corr = -1
+    best_key = None
+    best_shifts = None
+    best_key_length = 0
+
+    # Tester pour chaque longueur de clé possible
+    for key_length in range(1, 21):  # Longueur de la clé entre 1 et 20
+        avg_corr, shifts = clef_correlations(cipher, key_length)
+        
+        # Si la moyenne de la corrélation est meilleure, on garde la clé et les décalages
+        if avg_corr > best_avg_corr:
+            best_avg_corr = avg_corr
+            best_key_length = key_length
+            best_shifts = shifts
+            best_key = ''.join(alphabet[shift] for shift in best_shifts)
     
-    for key_length in range(1, 21):
-        score, shifts = clef_correlations(cipher, key_length)
-        if score > best_score:
-            best_score, best_key = score, "".join(alphabet[d] for d in shifts)
+    # Une fois la meilleure clé trouvée, on déchiffre le texte
+    decrypted_text = dechiffre_vigenere(cipher, best_key)
     
-    return best_key
+    return decrypted_text
 
 
 ################################################################
