@@ -229,7 +229,7 @@ def clef_par_decalages(cipher, key_length):
 # Cryptanalyse V1 avec décalages par frequence max
 def cryptanalyse_v1(cipher):
     """
-    Effectue une cryptanalyse basique du chiffre de Vigenère en déterminant la clé
+    Effectue une cryptanalyse basique du chiffrement de Vigenère en déterminant la clé
     et en déchiffrant le texte chiffré.
     
     Paramètres :
@@ -318,41 +318,27 @@ def tableau_decalages_ICM(cipher, key_length):
 # Cryptanalyse V2 avec décalages par ICM
 def cryptanalyse_v2(cipher):
     """
-    Effectue la cryptanalyse du chiffre de Vigenère avec l'ICM pour retrouver la clé et déchiffrer le message.
+    Déchiffre un texte chiffré par le chiffrement de Vigenère en utilisant l'analyse de l'indice de coïncidence mutuelle.
     
     Paramètre :
-        cipher (str) : Texte chiffré
+        cipher (str) : Le texte chiffré
     
     Retourne :
-        tuple : (clé estimée, texte déchiffré)
+        str : Le texte déchiffré
     """
-    # 1. Déterminer la longueur probable de la clé
-    key_length = longueur_clef(cipher)
+    # Estimation de la longueur de la clé
+    key_length = longueur_clef(cipher)  # La longueur de la clé est estimée
     
-    # 2. Trouver les décalages des colonnes
+    # 1. Déterminer les décalages par rapport à la première colonne
     decalages = tableau_decalages_ICM(cipher, key_length)
     
-    # 3. Déduire la clé en prenant la lettre la plus fréquente dans chaque colonne
-    colonnes = ["".join(cipher[j] for j in range(i, len(cipher), key_length) if cipher[j] in alphabet)
-                for i in range(key_length)]
+    # 2. Reconstituer la clé à partir des décalages
+    cle = "".join(chr(65 + d) for d in decalages)  # Clé reconstruite en lettres majuscules
     
-    clef = ""
-    for i in range(key_length):
-        histo = freq(colonnes[i])
-        lettre_plus_frequente = histo.index(max(histo))  # Trouver la lettre la plus fréquente
-        shift = (lettre_plus_frequente - (ord('E') - ord('A'))) % 26  # Supposer que 'E' est la plus fréquente
-        clef += alphabet[shift]
+    # 3. Déchiffrer le texte avec la clé obtenue
+    texte_dechiffre = dechiffre_vigenere(cipher, cle)
     
-    # 4. Déchiffrer le texte avec la clé trouvée
-    texte_dechiffre = ""
-    for i, c in enumerate(cipher):
-        if c in alphabet:
-            shift = ord(clef[i % key_length]) - ord('A')
-            texte_dechiffre += alphabet[(ord(c) - ord('A') - shift) % 26]
-        else:
-            texte_dechiffre += c
-    
-    return clef, texte_dechiffre
+    return texte_dechiffre
 
 
 ################################################################
