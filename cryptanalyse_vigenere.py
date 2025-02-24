@@ -281,7 +281,7 @@ def indice_coincidence_mutuelle(h1, h2, d):
     if N1 == 0 or N2 == 0:
         return 0.0  # Éviter la division par zéro
 
-    icm = sum(h1[i] * h2[(i + d) % len(alphabet)] for i in range(len(alphabet))) / (N1 * N2)
+    icm = sum(h1[i] * h2[(i + d) % len(h2)] for i in range(len(alphabet))) / (N1 * N2)
     
     return icm
 
@@ -342,9 +342,11 @@ def cryptanalyse_v2(cipher):
     
     # Estimer la longueur de la clé à partir de l'indice de coïncidence
     key_length = longueur_clef(cipher)
+    print(f"Longueur de clé estimée : {key_length}")
     
     # Trouver les décalages relatifs par rapport à la première colonne
     decalages = tableau_decalages_ICM(cipher, key_length)
+    print(f"Décalages trouvés : {decalages}")
     
     # Convertir les décalages en clé sous forme de chaîne de caractères
     best_key = "".join(alphabet[d] for d in decalages)
