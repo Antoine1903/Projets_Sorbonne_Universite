@@ -268,7 +268,7 @@ def cryptanalyse_v1(cipher):
     Retourne :
         str : Le texte déchiffré
     """
-    # Estimer la longueur de la clé
+    # Estimer la longueur de la clé à partir de l'indice de coïncidence
     key_length = longueur_clef(cipher)
     
     # Déterminer la clé sous forme de décalages
