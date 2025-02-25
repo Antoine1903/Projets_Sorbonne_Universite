@@ -367,11 +367,8 @@ def cryptanalyse_v2(cipher):
     # Trouver les décalages relatifs par rapport à la première colonne
     decalages = tableau_decalages_ICM(cipher, key_length)
     
-    # Convertir les décalages en clé sous forme de chaîne de caractères
-    best_key = "".join(alphabet[d] for d in decalages)
-    
     # Utiliser la fonction dechiffre_vigenere avec la clé obtenue pour déchiffrer le texte
-    decrypted_text = dechiffre_vigenere(cipher, best_key)
+    decrypted_text = dechiffre_vigenere(cipher, decalages)
     
     return decrypted_text
 
