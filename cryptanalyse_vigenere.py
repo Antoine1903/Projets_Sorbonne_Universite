@@ -4,7 +4,7 @@
 # Etudiant.e 1 : Zhang Yuxiang 21202829
 # Etudiant.e 2 : Lecomte Antoine 21103457
 
-import sys, getopt, string, math
+import sys, getopt, math
 
 # Alphabet français
 alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -18,61 +18,80 @@ freq_FR = [0.092060, 0.010360, 0.030219, 0.037547, 0.171768, 0.010960, 0.010608,
 # Chiffrement César
 def chiffre_cesar(cipher, key):
     """
-    Documentation à écrire
+    Chiffre un texte en utilisant le chiffrement de César avec une clé donnée.
+
+    Paramètres :
+        cipher (str) : Le texte à chiffrer.
+        key (int) : La clé de chiffrement (décalage des lettres).
+
+    Retourne :
+        str : Le texte chiffré où chaque lettre a été décalée selon la clé.
     """
     encrypted_text = ""
     for char in cipher:
-        if char.isalpha():
+        if char.isalpha():  # Si le caractère est une lettre
             start = ord('A') if char.isupper() else ord('a')
-            encrypted_char = chr((ord(char) - start + key) % len(alphabet) + start)
+            encrypted_char = chr((ord(char) - start + key) % len(alphabet) + start)  # Décalage avec modulo 26
             encrypted_text += encrypted_char
         else:
-            encrypted_text += char
+            encrypted_text += char  # Garder les caractères non alphabétiques tels quels
     return encrypted_text
 
 
 # Déchiffrement César
 def dechiffre_cesar(cipher, key):
     """
-    Documentation à écrire
+    Déchiffre un texte en utilisant le chiffrement de César avec une clé donnée.
+
+    Paramètres :
+        cipher (str) : Le texte à déchiffrer.
+        key (int) : La clé de chiffrement (décalage des lettres).
+
+    Retourne :
+        str : Le texte déchiffré où chaque lettre a été déplacée selon la clé dans la direction inverse.
     """
     decrypted_text = ""
     for char in cipher:
-        if char.isalpha():
+        if char.isalpha():  # Si le caractère est une lettre
             start = ord('A') if char.isupper() else ord('a')
-            decrypted_char = chr((ord(char) - start - key) % len(alphabet) + start)
+            decrypted_char = chr((ord(char) - start - key) % len(alphabet) + start)  # Décalage inverse avec modulo 26
             decrypted_text += decrypted_char
         else:
-            decrypted_text += char
+            decrypted_text += char  # Garder les caractères non alphabétiques tels quels
     return decrypted_text
 
 
 # Chiffrement Vigenere
 def chiffre_vigenere(cipher, key):
     """
-    Chiffrement de Vigenère
-    :param cipher: Texte clair (str)
-    :param key: Clé (str ou liste d'entiers)
-    :return: Texte chiffré (str)
+    Chiffrement de Vigenère.
+
+    Paramètres :
+        cipher (str) : Le texte à chiffrer (texte clair).
+        key (str ou list) : La clé de chiffrement, soit une chaîne de caractères (chaque lettre représentant un décalage),
+                            soit une liste d'entiers (chaque entier représentant un décalage numérique).
+
+    Retourne :
+        str : Le texte chiffré, où chaque lettre est décalée selon la clé.
     """
     encrypted_text = ""
     
     # Vérifie si la clé est une chaîne ou une liste d'entiers
     if isinstance(key, str):
-        key_shifts = [ord(k.upper()) - ord('A') for k in key]
+        key_shifts = [ord(k.upper()) - ord('A') for k in key]  # Conversion de chaque lettre de la clé en un décalage
     else:
         key_shifts = key  # La clé est déjà une liste d'entiers
     
-    key_length = len(key_shifts)
+    key_length = len(key_shifts)  # Longueur de la clé (pour répéter la clé si nécessaire)
     
     for i, char in enumerate(cipher):
-        if char.isalpha():
+        if char.isalpha():  # Si le caractère est une lettre
             start = ord('A') if char.isupper() else ord('a')
-            shift = key_shifts[i % key_length]  # Utilisation de la clé sous forme de décalage numérique
-            encrypted_char = chr((ord(char) - start + shift) % len(alphabet) + start)
+            shift = key_shifts[i % key_length]  # Utilisation du décalage correspondant dans la clé
+            encrypted_char = chr((ord(char) - start + shift) % len(alphabet) + start)  # Calcul du caractère chiffré
             encrypted_text += encrypted_char
         else:
-            encrypted_text += char
+            encrypted_text += char  # Garder les caractères non alphabétiques tels quels
     
     return encrypted_text
 
@@ -80,29 +99,34 @@ def chiffre_vigenere(cipher, key):
 # Déchiffrement Vigenere
 def dechiffre_vigenere(cipher, key):
     """
-    Déchiffrement de Vigenère
-    :param cipher: Texte chiffré (str)
-    :param key: Clé (str ou liste d'entiers)
-    :return: Texte déchiffré (str)
+    Déchiffrement de Vigenère.
+
+    Paramètres :
+        cipher (str) : Le texte à déchiffrer (texte chiffré).
+        key (str ou list) : La clé de chiffrement, soit une chaîne de caractères (chaque lettre représentant un décalage),
+                            soit une liste d'entiers (chaque entier représentant un décalage numérique).
+
+    Retourne :
+        str : Le texte déchiffré, où chaque lettre est déplacée selon la clé dans la direction inverse.
     """
     decrypted_text = ""
     
     # Vérifie si la clé est une chaîne ou une liste d'entiers
     if isinstance(key, str):
-        key_shifts = [ord(k.upper()) - ord('A') for k in key]
+        key_shifts = [ord(k.upper()) - ord('A') for k in key]  # Conversion de chaque lettre de la clé en un décalage
     else:
         key_shifts = key  # La clé est déjà une liste d'entiers
     
-    key_length = len(key_shifts)
+    key_length = len(key_shifts)  # Longueur de la clé (pour répéter la clé si nécessaire)
     
     for i, char in enumerate(cipher):
-        if char.isalpha():
+        if char.isalpha():  # Si le caractère est une lettre
             start = ord('A') if char.isupper() else ord('a')
-            shift = key_shifts[i % key_length]
-            decrypted_char = chr((ord(char) - start - shift) % len(alphabet) + start)
+            shift = key_shifts[i % key_length]  # Utilisation du décalage correspondant dans la clé
+            decrypted_char = chr((ord(char) - start - shift) % len(alphabet) + start)  # Calcul du caractère déchiffré
             decrypted_text += decrypted_char
         else:
-            decrypted_text += char
+            decrypted_text += char  # Garder les caractères non alphabétiques tels quels
     
     return decrypted_text
 
@@ -262,27 +286,25 @@ def cryptanalyse_v1(cipher):
 ### pour la cryptanalyse V2.
 
 # Indice de coincidence mutuelle avec décalage
-def indice_coincidence_mutuelle(h1, h2, d):
+def indice_coincidence_mutuelle(freq1, freq2, d):
     """
-    Calcule l'indice de coïncidence mutuelle entre deux histogrammes de fréquences,
-    en testant un décalage de d positions.
+    Calcule l'indice de coïncidence mutuelle entre deux distributions de fréquences de lettres,
+    avec un décalage appliqué au second texte.
 
     Paramètres :
-        h1 (list) : Histogramme des fréquences de la première colonne
-        h2 (list) : Histogramme des fréquences de la seconde colonne
-        d (int) : Décalage testé
-    
+        freq1 : Liste représentant la fréquence d'apparition de chaque lettre dans le premier texte.
+        freq2 : Liste représentant la fréquence d'apparition de chaque lettre dans le second texte.
+        d : Entier représentant le décalage à appliquer aux positions des lettres dans le second texte avant de les comparer aux fréquences du premier texte.
+        
     Retourne :
-        float : L'indice de coïncidence mutuelle
+        float : L'indice de coïncidence mutuelle entre les deux textes après avoir appliqué le décalage.
     """
-    N1 = sum(h1)
-    N2 = sum(h2)
-    
-    if N1 == 0 or N2 == 0:
-        return 0.0  # Éviter la division par zéro
+    n1 = sum(freq1)
+    n2 = sum(freq2)
 
-    icm = sum(h1[i] * h2[(i + d) % len(h2)] for i in range(len(alphabet))) / (N1 * N2)
-    
+    # Calcul de l'ICM avec décalage
+    icm = sum(freq1[i] * freq2[(i + d) % len(alphabet)] for i in range(len(alphabet))) / (n1 * n2)
+
     return icm
 
 
@@ -298,30 +320,29 @@ def tableau_decalages_ICM(cipher, key_length):
     Paramètres :
         cipher (str) : Le texte chiffré
         key_length (int) : La longueur de la clé estimée
-    
+
     Retourne :
         list : Une liste d'entiers représentant les décalages de la clé
     """
     # Découper le texte en colonnes
-    colonnes = ["".join(cipher[j] for j in range(i, len(cipher), key_length) if cipher[j] in alphabet)
-                for i in range(key_length)]
-    
-    decalages = [0]  # La première colonne a un décalage nul par rapport à elle-même
+    colonnes = ["".join(cipher[j] for j in range(i, len(cipher), key_length)) for i in range(key_length)]
 
-    # Calculer le décalage relatif pour chaque colonne
+    # Calcul des fréquences pour chaque colonne
+    colonnes_freq = [freq(colonne) for colonne in colonnes]
+
+    # Initialisation du tableau des décalages
+    decalages = [0] * key_length
+
+    # Calcul des décalages relatifs
     for i in range(1, key_length):
-        max_icm = 0  # Initialiser la valeur maximale de l'ICM
-        best_decalage = 0  # Initialiser le meilleur décalage
-
-        # Calculer l'ICM pour chaque décalage de 0 à 25
-        for d in range(len(alphabet)):
-            icm_value = indice_coincidence_mutuelle(freq(colonnes[0]), freq(colonnes[i]), d)
-            if icm_value > max_icm:
-                max_icm = icm_value
-                best_decalage = d
-
-        # Ajouter le décalage trouvé pour cette colonne
-        decalages.append(best_decalage)
+        max_icm = -1
+        meilleur_decalage = 0
+        for d in range(len(alphabet)):  # Parcourir tous les décalages possibles pour un alphabet de 26 lettres
+            icm = indice_coincidence_mutuelle(colonnes_freq[0], colonnes_freq[i], d)
+            if icm > max_icm:
+                max_icm = icm
+                meilleur_decalage = d
+        decalages[i] = meilleur_decalage
 
     return decalages
 
@@ -342,11 +363,9 @@ def cryptanalyse_v2(cipher):
     
     # Estimer la longueur de la clé à partir de l'indice de coïncidence
     key_length = longueur_clef(cipher)
-    print(f"Longueur de clé estimée : {key_length}")
     
     # Trouver les décalages relatifs par rapport à la première colonne
     decalages = tableau_decalages_ICM(cipher, key_length)
-    print(f"Décalages trouvés : {decalages}")
     
     # Convertir les décalages en clé sous forme de chaîne de caractères
     best_key = "".join(alphabet[d] for d in decalages)
