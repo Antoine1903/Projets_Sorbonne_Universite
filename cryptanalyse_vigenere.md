@@ -369,7 +369,7 @@ Test cryptanalyse_v3 : OK
 ----------------------------------------------
 
 
-Bien que cette méthode soit plus efficace, elle présente un coût en temps d'exécution plus élevé, avec environ 9 secondes sur les essais contre moins de 0.5 seconde pour les versions précédentes, bien que celles-ci soient moins performantes sur les résultats.
+Bien que cette méthode soit plus efficace (94 textes déchiffrés sur 100), elle présente un coût en temps d'exécution plus élevé, avec environ 9 secondes sur les essais contre moins de 0.5 seconde pour les versions précédentes, bien que celles-ci soient moins performantes sur les résultats.
 
 Nous remarquons cependant que certains tests persistent à échouer, malgré l'efficacité de cette méthode qui effectue des décalages circulaires afin de tester toutes les combinaisons des fréquences d'apparition de chaque lettre en les comparant directement avec les fréquences obtenues du texte Germinal de Zola (texte suffisamment long pour être représentatif de la fréquence d'apparition de chaque lettre dans la langue Française), et qui conserve ensuite pour chaque colonne, la permutation trouvée qui corrèle le plus avec les fréquences observées dans ce texte Français, afin d'identifier chaque lettre en question.
 
