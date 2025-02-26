@@ -1,8 +1,8 @@
 # Sorbonne Université 3I024 2024-2025
 # TME 2 : Cryptanalyse du chiffre de Vigenere
-#
-# Etudiant.e 1 : Zhang Yuxiang 21202829
-# Etudiant.e 2 : Lecomte Antoine 21103457
+
+# Etudiant 1 : Zhang Yuxiang 21202829
+# Etudiant 2 : Lecomte Antoine 21103457
 
 import sys, getopt, math
 
@@ -10,8 +10,6 @@ import sys, getopt, math
 alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 # Fréquence moyenne des lettres en français
-
-# Déjà modifié
 freq_FR = [0.092060, 0.010360, 0.030219, 0.037547, 0.171768, 0.010960, 0.010608, 0.010718, 0.075126, 0.003824, 0.000070, 0.061318, 0.026482, 0.070310, 0.049171, 0.023706, 0.010156, 0.066094, 0.078126, 0.073770, 0.063540, 0.016448, 0.000011, 0.004080, 0.002296, 0.001231]
 
 
@@ -259,14 +257,15 @@ def clef_par_decalages(cipher, key_length):
 # Cryptanalyse V1 avec décalages par frequence max
 def cryptanalyse_v1(cipher):
     """
-    Effectue une cryptanalyse basique du chiffrement de Vigenère en déterminant la clé
-    et en déchiffrant le texte chiffré.
+    Déchiffre un texte chiffré par le chiffrement de Vigenère en estimant la longueur de la clé,
+    en calculant les décalages relatifs de chaque colonne et en utilisant ces informations 
+    pour déchiffrer le texte chiffré.
     
     Paramètres :
-        cipher (str) : Le texte chiffré
+        cipher (str) : Le texte chiffré à analyser
     
     Retourne :
-        str : Le texte déchiffré
+        str : Le texte déchiffré obtenu après cryptanalyse
     """
     # Estimer la longueur de la clé à partir de l'indice de coïncidence
     key_length = longueur_clef(cipher)
@@ -278,6 +277,7 @@ def cryptanalyse_v1(cipher):
     decrypted_text = dechiffre_vigenere(cipher, best_key)
     
     return decrypted_text
+
 
 ################################################################
 
@@ -350,9 +350,9 @@ def tableau_decalages_ICM(cipher, key_length):
 # Cryptanalyse V2 avec décalages par ICM
 def cryptanalyse_v2(cipher):
     """
-    Déchiffre un texte chiffré par Vigenère en utilisant l'indice de coïncidence pour déterminer la longueur de la clé,
-    puis en calculant les décalages relatifs de chaque colonne. Une fois les colonnes alignées, on applique le déchiffrement 
-    de Vigenère avec la clé trouvée.
+    Déchiffre un texte chiffré du chiffrement de Vigenère en utilisant l'indice de coïncidence pour déterminer la longueur de la clé,
+    puis en calculant les décalages relatifs grâce à l'ICM de chaque colonne. Une fois les colonnes alignées, on applique le déchiffrement 
+    de César sur le texte reconstruit.
     
     Paramètre :
         cipher (str) : Le texte chiffré
@@ -367,9 +367,29 @@ def cryptanalyse_v2(cipher):
     # Trouver les décalages relatifs par rapport à la première colonne
     decalages = tableau_decalages_ICM(cipher, key_length)
     
-    # Utiliser la fonction dechiffre_vigenere avec la clé obtenue pour déchiffrer le texte
-    decrypted_text = dechiffre_vigenere(cipher, decalages)
+    # Découper le texte en colonnes
+    colonnes = ["".join(cipher[j] for j in range(i, len(cipher), key_length)) for i in range(key_length)]
     
+    # Appliquer les décalages pour aligner les colonnes
+    colonnes_alignees = [
+        dechiffre_cesar(colonne, decalages[i]) for i, colonne in enumerate(colonnes)
+    ]
+
+    # Reconstruire le texte chiffré aligné
+    # i % key_length détermine de quelle colonne provient la lettre
+    # i // key_length détermine l'index dans la colonne concernée
+    texte_aligne = [""] * len(cipher)
+    for i in range(len(cipher)):
+        texte_aligne[i] = colonnes_alignees[i % key_length][i // key_length] 
+    texte_aligne = "".join(texte_aligne)
+
+    # Déterminer le décalage optimal avec la lettre la plus fréquente
+    lettre_plus_frequente = lettre_freq_max(texte_aligne)
+    decalage_cesar = (lettre_plus_frequente - alphabet.index("E")) % len(alphabet)
+
+    # Déchiffrer le texte chiffré aligné avec César
+    decrypted_text = dechiffre_cesar(texte_aligne, decalage_cesar)
+
     return decrypted_text
 
 
@@ -398,8 +418,7 @@ def correlation(L1, L2):
     mean1, mean2 = sum(L1) / len(L1), sum(L2) / len(L2)
     
     num = sum((L1[i] - mean1) * (L2[i] - mean2) for i in range(len(L1)))
-    denom = math.sqrt(sum((L1[i] - mean1) ** 2 for i in range(len(L1))) * 
-                      sum((L2[i] - mean2) ** 2 for i in range(len(L2))))
+    denom = math.sqrt(sum((L1[i] - mean1) ** 2 for i in range(len(L1))) * sum((L2[i] - mean2) ** 2 for i in range(len(L2))))
     
     return num / denom if denom != 0 else 0.0
 
@@ -417,19 +436,19 @@ def clef_correlations(cipher, key_length):
     Retourne :
         tuple : (moyenne des corrélations, liste des décalages)
     """
-    colonnes = ["".join(cipher[j] for j in range(i, len(cipher), key_length) if cipher[j] in alphabet)
-                for i in range(key_length)]
+    colonnes = ["".join(cipher[j] for j in range(i, len(cipher), key_length) if cipher[j] in alphabet) for i in range(key_length)]
     
-    histos = [freq(col) for col in colonnes]
+    # Calcul des fréquences pour chaque colonne
+    colonnes_freq = [freq(colonne) for colonne in colonnes]
     
     best_shifts = []
     best_corrs = []
     
-    for hist in histos:
+    for freqs in colonnes_freq:
         best_d, best_corr = 0, -1
         for d in range(len(alphabet)):
-            shifted_hist = hist[d:] + hist[:d]  # Décalage circulaire
-            corr = correlation(shifted_hist, freq_FR)
+            shifted_hist = freqs[d:] + freqs[:d]  # Décalage circulaire
+            corr = correlation(shifted_hist, freq_FR) # Fréquences des lettres de Germinal (texte Français) pour freq_FR
             if corr > best_corr:
                 best_corr, best_d = corr, d
         
