@@ -87,5 +87,34 @@ def plot_frontiere(desc_set, label_set, classifier, step=30):
     # tracer des frontieres
     # colors[0] est la couleur des -1 et colors[1] est la couleur des +1
     plt.contourf(x1grid,x2grid,res,colors=["darksalmon","skyblue"],levels=[-1000,0,1000])
+
+def create_XOR(n, var):
+    """ int * float -> tuple[ndarray, ndarray]
+        Hyp: n et var sont positifs
+        n: nombre de points voulus
+        var: variance sur chaque dimension
+    """
+    assert n % 4 == 0, "n doit être un multiple de 4 pour garantir un nombre égal de points par classe."
     
+    centers = np.array([[0, 0], [1, 1], [1, 0], [0, 1]])  
+    sigma_matrix = np.array([[var, 0], [0, var]])  
+    
+    data_desc_list = []
+    data_labels_list = []
+    
+    for i in range(4):
+        desc = np.random.multivariate_normal(centers[i], sigma_matrix, n)
+        
+        if i == 2 or i == 3:
+            lab = np.ones(n)
+        else:
+            lab = -np.ones(n)
+        
+        data_desc_list.append(desc)
+        data_labels_list.append(lab)
+    
+    data_desc = np.vstack(data_desc_list)
+    data_labels = np.concatenate(data_labels_list)
+    
+    return data_desc, data_labels
 # ------------------------ 

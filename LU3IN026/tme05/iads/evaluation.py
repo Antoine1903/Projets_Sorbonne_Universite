@@ -12,6 +12,7 @@ Année: LU3IN026 - semestre 2 - 2024-2025, Sorbonne Université
 # import externe
 import numpy as np
 import pandas as pd
+import copy
 
 # ------------------------ 
 def crossval(X, Y, n_iterations, iteration):
@@ -61,5 +62,27 @@ def analyse_perfs(L):
     moyenne = np.mean(L)
     ecart_type = np.std(L)
     return (moyenne, ecart_type)
+
+def validation_croisee(C, DS, nb_iter):
+    """ Classifieur * tuple[array, array] * int -> tuple[ list[float], float, float]
+    """
+    X, Y = DS
+    perf = []
+    
+    print("------ affichage validation croisée (optionnel)")
+    for i in range(nb_iter):
+        Xapp, Yapp, Xtest, Ytest = crossval_strat(X, Y, nb_iter, i)
+        classifieur = copy.deepcopy(C)
+        classifieur.train(Xapp, Yapp)
+        Y_pred = np.array([classifieur.predict(x) for x in Xtest])
+        taux_bonne_classification = np.mean(Y_pred == Ytest)
+        perf.append(taux_bonne_classification)
+        print(f'Itération {i}: taille base app.= {len(Xapp)}\ttaille base test={len(Xtest)}\tTaux de bonne classif: {taux_bonne_classification:.4f}')
+        
+    taux_moyen = np.mean(perf)
+    taux_ecart = np.std(perf)
+    
+    print("------ fin affichage validation croisée")
+    return perf, taux_moyen, taux_ecart
 
 # ------------------------ 
