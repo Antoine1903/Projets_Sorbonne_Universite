@@ -283,14 +283,11 @@ class ClassifierMultiOAA(Classifier):
         """ rend le score de prédiction sur x (valeur réelle)
             x: une description
         """
-        scores = {}
-        for c, model in self.models.items():
-            scores[c] = model.score(x)  # Calculer le score du classifieur pour la classe c
-        return scores
+        return {c: model.score(x) for c, model in self.models.items()}  # Calculer le score du classifieur pour la classe c
+        
         
     def predict(self, x):
         """ rend la prediction sur x (soit -1 ou soit +1)
             x: une description
         """
-        scores = self.score(x)  # Calculer les scores pour chaque classe
-        return max(scores, key=scores.get)  # Retourner la classe ayant le score maximal
+        return max(self.models.keys(), key=lambda c: self.models[c].score(x))  # Retourner la classe ayant le score maximal
