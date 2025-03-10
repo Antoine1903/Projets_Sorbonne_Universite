@@ -97,6 +97,158 @@ App (index.jsx)
 - **State** : `selectedUser (Object)`
 - **Composants enfants** : `AsideValidationUser.jsx`
 
+---------------------------------------------------------------
+# Document de mi-projet - Organiz’asso
+
+## 1. Graphe des dépendances mutuelles entre composants
+
+Voici une représentation schématique des dépendances entre les composants React du projet Organiz’asso :
+
+```plaintext
+App (index.jsx)
+├── MainPage.jsx
+│   ├── NavigationPanel.jsx
+│   │   ├── Login.jsx
+│   │   └── Logout.jsx
+│   ├── Feed.jsx
+│   │   ├── SearchBar.jsx
+│   │   ├── MessageList.jsx
+│   │   │   ├── Message.jsx
+│   │   │   │   └── ReplyList.jsx
+│   │   │   │       └── Reply.jsx
+│   │   └── AddMessage.jsx
+│   ├── User.jsx
+│   │   ├── MessageList.jsx
+│   │   │   └── Message.jsx
+│   │   │       └── ReplyList.jsx
+│   │   │           └── Reply.jsx
+│   ├── Result.jsx
+│   │   ├── MessageList.jsx
+│   │   │   └── Message.jsx
+│   │   │       └── ReplyList.jsx
+│   │   │           └── Reply.jsx
+│   ├── AsideAdmin.jsx
+│   │   ├── AsideMenu.jsx
+│   │   └── AsideValidation.jsx
+│   │       └── AsideValidationUser.jsx
+│   ├── FeedAdmin.jsx
+│   │   ├── MessageList.jsx
+│   │   │   ├── Message.jsx
+│   │   │   │   └── ReplyList.jsx
+│   │   │   │       └── Reply.jsx
+│   │   └── AddMessage.jsx
+├── messages_request.jsx
+└── server_request.jsx
+```
+
+## 2. Présentation détaillée des composants
+
+### index.jsx
+- **Fonction** : Point d'entrée de l'application, rend le composant `MainPage`.
+- **Props** : Aucune.
+- **États** : Aucun.
+- **Composants enfants** : `MainPage`.
+
+### MainPage.jsx
+- **Fonction** : Gère la navigation principale et l'affichage dynamique des différentes pages (`Feed`, `User`, `Result`, `FeedAdmin`).
+- **Props** : Aucune.
+- **États** : Utilise `useState` et `useEffect` pour charger les données utilisateur et gérer la navigation.
+- **Composants enfants** : `NavigationPanel`, `Signin`, `Feed`, `Result`, `User`, `SearchBar`, `AsideAdmin`, `FeedAdmin`.
+
+### NavigationPanel.jsx
+- **Fonction** : Barre de navigation permettant la connexion/déconnexion.
+- **Props** : Aucune.
+- **États** : Aucun.
+- **Composants enfants** : `Login`, `Logout`.
+
+### Login.jsx
+- **Fonction** : Gère la connexion utilisateur.
+- **Props** : Aucune.
+- **États** : Utilise `useState` pour stocker les informations de connexion.
+- **Composants enfants** : Aucun.
+
+### Logout.jsx
+- **Fonction** : Gère la déconnexion utilisateur.
+- **Props** : Aucune.
+- **États** : Aucun.
+- **Composants enfants** : Aucun.
+
+### Feed.jsx
+- **Fonction** : Affiche les messages du forum ouvert.
+- **Props** : Aucune.
+- **États** : Utilise `useState` et `useEffect` pour récupérer les messages via `messages_request.jsx`.
+- **Composants enfants** : `SearchBar`, `MessageList`, `AddMessage`.
+
+### MessageList.jsx
+- **Fonction** : Liste tous les messages sous forme de composants `Message`.
+- **Props** : `messages` (tableau de messages).
+- **États** : Aucun.
+- **Composants enfants** : `Message`.
+
+### Message.jsx
+- **Fonction** : Affiche un message spécifique avec ses réponses.
+- **Props** : `message` (objet message).
+- **États** : Utilise `useState` et `useEffect` pour charger les réponses.
+- **Composants enfants** : `ReplyList`.
+
+### ReplyList.jsx
+- **Fonction** : Affiche la liste des réponses associées à un message.
+- **Props** : `replies` (tableau de réponses).
+- **États** : Aucun.
+- **Composants enfants** : `Reply`.
+
+### Reply.jsx
+- **Fonction** : Affiche une réponse unique.
+- **Props** : `reply` (objet réponse).
+- **États** : Aucun.
+- **Composants enfants** : Aucun.
+
+### User.jsx
+- **Fonction** : Affiche le profil utilisateur avec ses messages publiés.
+- **Props** : Aucune.
+- **États** : Utilise `useState` et `useEffect` pour récupérer les messages utilisateur.
+- **Composants enfants** : `MessageList`.
+
+### Result.jsx
+- **Fonction** : Affiche les résultats de recherche sous forme de messages filtrés.
+- **Props** : `results` (tableau de messages filtrés).
+- **États** : Utilise `useState` pour stocker les résultats de recherche.
+- **Composants enfants** : `MessageList`.
+
+### AsideAdmin.jsx
+- **Fonction** : Menu latéral réservé aux administrateurs pour la gestion du site.
+- **Props** : Aucune.
+- **États** : Utilise `useState` et `useEffect` pour la validation des utilisateurs.
+- **Composants enfants** : `AsideMenu`, `AsideValidation`.
+
+### AsideValidationUser.jsx
+- **Fonction** : Gère la validation des utilisateurs en attente.
+- **Props** : `user` (objet utilisateur).
+- **États** : Utilise `useState` pour le statut de validation.
+- **Composants enfants** : Aucun.
+
+### FeedAdmin.jsx
+- **Fonction** : Affiche le forum réservé aux administrateurs avec la possibilité d'ajouter des messages.
+- **Props** : Aucune.
+- **États** : Utilise `useState` et `useEffect` pour récupérer et afficher les messages.
+- **Composants enfants** : `MessageList`, `AddMessage`.
+
+### messages_request.jsx
+- **Fonction** : Contient les fonctions de requêtes API pour manipuler les messages (GET, POST, DELETE).
+- **Props** : Non applicable.
+- **États** : Non applicable.
+- **Composants enfants** : Aucun.
+
+### server_request.jsx
+- **Fonction** : Définit la configuration par défaut pour les requêtes serveur avec Axios.
+- **Props** : Non applicable.
+- **États** : Non applicable.
+- **Composants enfants** : Aucun.
+
+... (Continuer avec tous les autres composants JSX restants)
+
+-------------------------------------------------------
+
 ## Architecture Globale du Projet
 
 - Utilisation de React Router pour la gestion de la navigation entre les pages
