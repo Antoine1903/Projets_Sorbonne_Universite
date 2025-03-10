@@ -1,6 +1,6 @@
 # Document de mi-projet : Organiz’asso
 
-## 1. Graphe des dépendances réciproques des composants
+## Graphe des dépendances réciproques des composants
 
 Ce graphe montre les relations entre les composants React du projet, mettant en évidence les dépendances mutuelles et la hiérarchie des composants.
 
@@ -43,9 +43,9 @@ App (index.jsx)
 └── server_request.jsx
 ```
 
-## 2. Présentation détaillée des composants
+## Présentation détaillée des composants
 
-### 2.1 Composants de Pages
+### Composants de Pages
 
 #### `Feed.jsx`
 - **Fonction** : Affiche tous les messages du forum ouvert
@@ -65,7 +65,7 @@ App (index.jsx)
 - **State** : `filteredMessages`
 - **Composants enfants** : `MessageList.jsx`
 
-### 2.2 Composants Fonctionnels
+### Composants Fonctionnels
 
 #### `MessageList.jsx`
 - **Fonction** : Affiche une liste de messages
@@ -83,7 +83,7 @@ App (index.jsx)
 - **Fonction** : Gère les requêtes API pour récupérer, ajouter ou supprimer des messages
 - **Dépendances** : `axios`, `server_request.jsx`
 
-### 2.3 Composants Administrateur
+### Composants Administrateur
 
 #### `AsideAdmin.jsx`
 - **Fonction** : Affiche le menu latéral pour les administrateurs
@@ -97,13 +97,13 @@ App (index.jsx)
 - **State** : `selectedUser (Object)`
 - **Composants enfants** : `AsideValidationUser.jsx`
 
-## 3. Architecture Globale du Projet
+## Architecture Globale du Projet
 
 - Utilisation de React Router pour la gestion de la navigation entre les pages
 - Intégration de `server_request.jsx` pour toutes les requêtes API
 - Gestion des états globaux avec `useState` et `useContext` pour une meilleure performance et organisation
 
-## 4. Analyse des Interactions et Fonctionnalités
+## Analyse des Interactions et Fonctionnalités
 
 - **Connexion et inscription** : Gérés par `Login.jsx`, `Signin.jsx`
 - **Gestion des messages et des réponses** : `AddMessage.jsx`, `Reply.jsx`
