@@ -39,6 +39,7 @@ App (index.jsx)
 │   │   │   │   └── ReplyList.jsx
 │   │   │   │       └── Reply.jsx
 │   │   └── AddMessage.jsx
+├── messages_request.jsx
 └── server_request.jsx
 ```
 
@@ -58,6 +59,12 @@ App (index.jsx)
 - **State** : `userMessages (Array)`
 - **Composants enfants** : `MessageList.jsx`
 
+#### `Result.jsx`
+- **Fonction** : Affiche les résultats de recherche basés sur des mots-clés, des dates ou des auteurs
+- **Props** : `searchResults (Array)`
+- **State** : `filteredMessages`
+- **Composants enfants** : `MessageList.jsx`
+
 ### 2.2 Composants Fonctionnels
 
 #### `MessageList.jsx`
@@ -72,10 +79,9 @@ App (index.jsx)
 - **State** : `isEditing (Boolean)`
 - **Composants enfants** : `ReplyList.jsx`
 
-#### `SearchBar.jsx`
-- **Fonction** : Permet la recherche par mots-clés, date ou auteur
-- **Props** : `onSearch (Function)`
-- **State** : `searchInput (String)`
+#### `messages_request.jsx`
+- **Fonction** : Gère les requêtes API pour récupérer, ajouter ou supprimer des messages
+- **Dépendances** : `axios`, `server_request.jsx`
 
 ### 2.3 Composants Administrateur
 
