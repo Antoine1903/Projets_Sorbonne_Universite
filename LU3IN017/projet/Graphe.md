@@ -6,7 +6,6 @@ Le graphe suivant montre les relations entre les composants React du projet, met
 
 ```
 App (index.jsx)
-├── UserContext.jsx
 ├── MainPage.jsx
 │   ├── NavigationPanel.jsx
 │   │   ├── Login.jsx
@@ -50,7 +49,8 @@ App (index.jsx)
 │   │   │   └── AddMessage.jsx
 ├── api/messagesAPI.jsx
 ├── api/userAPI.jsx
-└── api/serverConfig.jsx
+├── api/serverConfig.jsx
+└── context/UserContext.jsx
 ```
 
 ## 2. Présentation des composants et leur fonctionnement
@@ -79,89 +79,39 @@ export const UserProvider = ({ children }) => {
 };
 ```
 
-### 2.2 Composants principaux
+### 2.2 Gestion des utilisateurs
 
-#### `App.jsx`
-- **Fonction** : Point d'entrée de l'application.
+#### `Signup.jsx`
+- **Fonction** : Permet à un nouvel utilisateur de s'inscrire.
 - **Props** : Aucune.
+- **State** : `name (String)`, `email (String)`, `password (String)`.
+
+#### `UserProfile.jsx`
+- **Fonction** : Affiche le profil d'un utilisateur avec ses messages publiés.
+- **Props** : `user (Object)`.
 - **State** : Aucun.
-- **Composants enfants** : `MainPage.jsx`.
+- **Composants enfants** : `UserInfo.jsx`, `UserMessageList.jsx`.
 
-#### `MainPage.jsx`
-- **Fonction** : Gère la navigation et l'affichage principal.
-- **Props** : Aucune.
-- **State** : `currentPage (String)`, `user (Object)`.
-- **Composants enfants** : `NavigationPanel.jsx`, `Feed.jsx`, `User.jsx`, `Result.jsx`, `AsideAdmin.jsx`.
+### 2.3 Fonctionnalités administratives
 
-### 2.3 Gestion des utilisateurs
-
-#### `NavigationPanel.jsx`
-- **Fonction** : Barre de navigation permettant connexion/déconnexion.
-- **Props** : Aucune.
-- **State** : Aucun.
-- **Composants enfants** : `Login.jsx`, `Logout.jsx`.
-
-#### `Login.jsx`
-- **Fonction** : Gère la connexion utilisateur.
-- **Props** : Aucune.
-- **State** : `email (String)`, `password (String)`.
-
-#### `Logout.jsx`
-- **Fonction** : Gère la déconnexion.
-- **Props** : Aucune.
-- **State** : Aucun.
-
-### 2.4 Gestion des messages
-
-#### `Feed.jsx`
-- **Fonction** : Affiche les messages du forum ouvert.
-- **Props** : `messages (Array)`, `user (Object)`.
-- **State** : `searchTerm (String)`, `filteredMessages (Array)`.
-- **Composants enfants** : `SearchBar.jsx`, `MessageList.jsx`, `AddMessage.jsx`.
-
-#### `MessageList.jsx`
-- **Fonction** : Affiche une liste de messages.
-- **Props** : `messages (Array)`, `onDelete (Function)`.
-- **State** : Aucun.
-- **Composants enfants** : `Message.jsx`.
-
-#### `Message.jsx`
-- **Fonction** : Affiche un message.
-- **Props** : `author (String)`, `content (String)`, `timestamp (Date)`.
-- **State** : `isEditing (Boolean)`.
-- **Composants enfants** : `ReplyList.jsx`.
-
-#### `ReplyList.jsx`
-- **Fonction** : Liste des réponses d'un message.
-- **Props** : `replies (Array)`.
-- **State** : Aucun.
-- **Composants enfants** : `Reply.jsx`.
-
-#### `Reply.jsx`
-- **Fonction** : Affiche une réponse.
-- **Props** : `reply (Object)`.
-- **State** : Aucun.
-
-### 2.5 Fonctionnalités administratives
-
-#### `AsideAdmin.jsx`
-- **Fonction** : Interface administrateur.
+#### `AdminPanel.jsx`
+- **Fonction** : Interface de gestion des administrateurs.
 - **Props** : `adminActions (Object)`.
 - **State** : `selectedAction (String)`.
-- **Composants enfants** : `AsideMenu.jsx`, `AsideValidation.jsx`.
+- **Composants enfants** : `AdminMenu.jsx`, `UserValidation.jsx`.
 
-#### `AsideValidation.jsx`
-- **Fonction** : Validation des inscriptions.
+#### `UserValidation.jsx`
+- **Fonction** : Permet aux administrateurs d'approuver ou rejeter l'inscription des utilisateurs.
 - **Props** : `pendingUsers (Array)`, `onValidate (Function)`, `onReject (Function)`.
 - **State** : `selectedUser (Object)`, `loading (Boolean)`, `error (String)`.
-- **Composants enfants** : `AsideValidationUser.jsx`.
+- **Composants enfants** : `ValidateUser.jsx`.
 
-### 2.6 Recherche
+### 2.4 Recherche et filtres avancés
 
 #### `SearchBar.jsx`
-- **Fonction** : Recherche de messages.
-- **Props** : `onSearch (Function)`, `placeholder (String, optionnel)`.
-- **State** : `query (String)`.
+- **Fonction** : Recherche avancée avec filtres.
+- **Props** : `onSearch (Function)`, `filters (Object)`.
+- **State** : `query (String)`, `selectedFilters (Object)`.
 
 ## 3. Architecture globale du projet
 
@@ -172,8 +122,9 @@ export const UserProvider = ({ children }) => {
 
 ## 4. Analyse des interactions et fonctionnalités
 
-- **Connexion/inscription** : `Login.jsx`, `UserContext.jsx`.
-- **Ajout/Suppression de messages** : `AddMessage.jsx`, `MessageList.jsx`.
-- **Gestion administrateur** : `AsideAdmin.jsx`, `AsideValidation.jsx`.
-- **Recherche avancée** : `SearchBar.jsx`.
+- **Connexion/inscription** : `Signup.jsx`, `Login.jsx`, `UserContext.jsx`.
+- **Ajout/Suppression de messages** : `AddMessage.jsx`, `MessageList.jsx`, `UserProfile.jsx`.
+- **Gestion administrateur** : `AdminPanel.jsx`, `UserValidation.jsx`.
+- **Recherche avancée** : `SearchBar.jsx` avec filtres par mots-clés, auteur et date.
+- **Contrôle des permissions** : `MainPage.jsx` gère l'accès des utilisateurs et administrateurs.
 
