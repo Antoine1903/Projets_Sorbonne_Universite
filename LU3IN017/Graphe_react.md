@@ -93,11 +93,32 @@ App (index.jsx)
 
 #### `AsideValidation.jsx`
 - **Fonction** : Gère la validation des nouvelles inscriptions
-- **Props** : `pendingUsers (Array)`, `onValidate (Function)`
-- **State** : `selectedUser (Object)`
+- **Props** : `pendingUsers (Array)`, `onValidate (Function)`, `onReject (Function)`
+- **State** : `selectedUser (Object)`, `loading (Boolean)`, `error (String)`
 - **Composants enfants** : `AsideValidationUser.jsx`
 
-----------------------------------------------------
+### SearchBar.jsx
+- **Fonction** : Permet la recherche de messages
+- **Props** : `onSearch (Function)`, `placeholder (String, optionnel)`
+- **State** : `query (String)`
+- **Composants inclus** : Aucun
+
+### AddMessage.jsx
+- **Fonction** : Permet aux utilisateurs d'ajouter un message
+- **Props** : `onMessageAdded (Function, optionnel)`
+- **State** : `messageContent (String)`, `error (String)`
+- **Composants inclus** : Aucun
+
+### AsideMenu.jsx
+- **Fonction** : Menu latéral pour la navigation
+- **Props** : `userRole (String)`
+- **State** : `activeSection (String)`
+- **Composants inclus** : Aucun
+
+### Correction des dépendances API
+- **Clarification** : `messages_request.jsx` envoie des requêtes à `server_request.jsx`, qui gère la configuration Axios.
+
+## Présentation des composants un par un
 
 ### index.jsx
 - **Fonction** : Point d'entrée de l'application, rend le composant `MainPage`.
