@@ -136,6 +136,26 @@ App (index.jsx)
 - **State** : Aucun.
 - **Composants inclus** : Aucun.
 
+Voici comment suivre le format pour les fichiers mentionnés :
+
+### EditMessage
+- **Fonction :** Modification d'un message existant dans la discussion.
+- **Props :** `messageId`, `messageContent`
+- **State :** `newMessageContent`
+- **Composants inclus :** `MessageEditor`
+
+### DeleteMessage
+- **Fonction :** Suppression d'un message spécifique de la discussion.
+- **Props :** `messageId`
+- **State :** Aucun.
+- **Composants inclus :** Aucun.
+
+### AddMessage
+- **Fonction :** Ajout d'un nouveau message dans la discussion.
+- **Props :** Aucun.
+- **State :** `newMessageContent`
+- **Composants inclus :** `MessageEditor`
+
 ### **UserProfile**
 
 - **Fonction** : Affichage du profil utilisateur.
@@ -200,13 +220,26 @@ App (index.jsx)
 - **State** : Aucun.  
 - **Composants inclus** : Aucun.  
 
-### **Hooks et API**
+### api/messagesAPI
+- **Fonction :** Gestion des requêtes liées aux messages (création, modification, suppression).
+- **Props :** Aucun.
+- **State :** Aucun.
+- **Composants inclus :** Aucun.
 
-- **messagesAPI.jsx** : Interface avec l'API pour la gestion des messages.
+### api/userAPI
+- **Fonction :** Gestion des données utilisateur (connexion, déconnexion, récupération des informations utilisateur).
+- **Props :** Aucun.
+- **State :** Aucun.
+- **Composants inclus :** Aucun.
 
-- **userAPI.jsx** : Interface avec l'API pour la gestion des utilisateurs
+### api/serverConfig
+- **Fonction :** Configuration du serveur (paramètres généraux, connexion à la base de données).
+- **Props :** Aucun.
+- **State :** Aucun.
+- **Composants inclus :** Aucun.
 
-- **serverConfig.jsx** : Contient la configuration du serveur.
-
-- **UserContext.jsx** : Gère le contexte global utilisateur.
-
+### context/UserContext
+- **Fonction :** Fourniture de l'état de l'utilisateur (authentification, informations utilisateur) à travers l'application via le contexte.
+- **Props :** Aucun.
+- **State :** `user`, `isAuthenticated`
+- **Composants inclus :** `UserProvider`, `useUserContext`
