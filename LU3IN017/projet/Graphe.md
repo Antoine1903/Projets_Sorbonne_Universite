@@ -136,8 +136,6 @@ App (index.jsx)
 - **State** : Aucun.
 - **Composants inclus** : Aucun.
 
-Voici comment suivre le format pour les fichiers mentionnés :
-
 ### EditMessage
 - **Fonction :** Modification d'un message existant dans la discussion.
 - **Props :** `messageId`, `messageContent`
@@ -163,6 +161,24 @@ Voici comment suivre le format pour les fichiers mentionnés :
 - **State** : Aucun.
 - **Composants inclus** : UserInfo, UserSettings, UserMessageList.
 
+### **UserInfo**  
+- **Fonction** : Affiche les informations d’un utilisateur.  
+- **Props** : `user` (objet) – Données de l’utilisateur.  
+- **State** : Aucun.  
+- **Composants inclus** : Aucun.  
+
+### **UserSettings**  
+- **Fonction** : Permet à un utilisateur de modifier ses paramètres (email, mot de passe, préférences).  
+- **Props** : `user` (objet) – Informations de l’utilisateur actuel.  
+- **State** : `email` (string), `password` (string), `notifications` (bool) – États modifiables.  
+- **Composants inclus** : Aucun.  
+
+### **UserMessageList**  
+- **Fonction** : Affiche les messages publiés par un utilisateur.  
+- **Props** : `userId` (string) – Identifiant de l’utilisateur.  
+- **State** : `messages` (array) – Liste des messages.  
+- **Composants inclus** : `Message`.  
+
 ### **AdminPanel**
 
 - **Fonction** : Gère les actions administratives.
@@ -183,24 +199,6 @@ Voici comment suivre le format pour les fichiers mentionnés :
 - **Props** : Aucun.
 - **State** : Aucun.
 - **Composants inclus** : MessageList, AddMessage. 
-
-### **UserInfo**  
-- **Fonction** : Affiche les informations d’un utilisateur.  
-- **Props** : `user` (objet) – Données de l’utilisateur.  
-- **State** : Aucun.  
-- **Composants inclus** : Aucun.  
-
-### **UserSettings**  
-- **Fonction** : Permet à un utilisateur de modifier ses paramètres (email, mot de passe, préférences).  
-- **Props** : `user` (objet) – Informations de l’utilisateur actuel.  
-- **State** : `email` (string), `password` (string), `notifications` (bool) – États modifiables.  
-- **Composants inclus** : Aucun.  
-
-### **UserMessageList**  
-- **Fonction** : Affiche les messages publiés par un utilisateur.  
-- **Props** : `userId` (string) – Identifiant de l’utilisateur.  
-- **State** : `messages` (array) – Liste des messages.  
-- **Composants inclus** : `Message`.  
 
 ### **SearchResults**  
 - **Fonction** : Affiche les résultats d’une recherche de messages.  
