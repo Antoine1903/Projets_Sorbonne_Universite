@@ -102,6 +102,12 @@ App (index.jsx)
 - **State** : Liste des messages.
 - **Composants inclus** : SearchBar, MessageList, AddMessage.
 
+### **SearchBar**  
+- **Fonction** : Permet d’effectuer une recherche dans les messages.  
+- **Props** : `onSearch(query)` – Fonction appelée lors d’une recherche.  
+- **State** : `query` (string) – Terme recherché.  
+- **Composants inclus** : Aucun.
+
 ### **MessageList**
 
 - **Fonction** : Liste des messages affichés sur le forum.
@@ -156,13 +162,7 @@ App (index.jsx)
 - **Fonction** : Affichage des discussions du forum privé.
 - **Props** : Aucun.
 - **State** : Aucun.
-- **Composants inclus** : MessageList, AddMessage.
-
-### **SearchBar**  
-- **Fonction** : Permet d’effectuer une recherche dans les messages.  
-- **Props** : `onSearch(query)` – Fonction appelée lors d’une recherche.  
-- **State** : `query` (string) – Terme recherché.  
-- **Composants inclus** : Aucun.  
+- **Composants inclus** : MessageList, AddMessage. 
 
 ### **UserInfo**  
 - **Fonction** : Affiche les informations d’un utilisateur.  
