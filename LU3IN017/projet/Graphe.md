@@ -1,6 +1,6 @@
-# Document de mi-projet : Organiz’asso
+# Rapport de mi-projet : Organiz'Asso
 
-## 1. Graphe des dépendances réciproques des composants
+## 1. Graphe des dépendances des composants React
 
 Le graphe suivant montre les relations entre les composants React du projet, mettant en évidence les dépendances mutuelles et la hiérarchie des composants.
 
@@ -10,121 +10,147 @@ App (index.jsx)
 │   ├── NavigationPanel.jsx
 │   │   ├── Login.jsx
 │   │   ├── Logout.jsx
-│   │   └── Signup.jsx
+│   │   ├── Signup.jsx
 │   ├── Feed.jsx
 │   │   ├── SearchBar.jsx
 │   │   ├── MessageList.jsx
 │   │   │   ├── Message.jsx
 │   │   │   │   ├── ReplyList.jsx
-│   │   │   │   │   └── Reply.jsx
+│   │   │   │   │   ├── Reply.jsx
 │   │   │   │   ├── EditMessage.jsx
-│   │   │   │   └── DeleteMessage.jsx
-│   │   └── AddMessage.jsx
+│   │   │   │   ├── DeleteMessage.jsx
+│   │   ├── AddMessage.jsx
 │   ├── UserProfile.jsx
 │   │   ├── UserInfo.jsx
+│   │   ├── UserSettings.jsx
 │   │   ├── UserMessageList.jsx
 │   │   │   ├── Message.jsx
 │   │   │   │   ├── ReplyList.jsx
-│   │   │   │   │   └── Reply.jsx
+│   │   │   │   │   ├── Reply.jsx
 │   │   │   │   ├── EditMessage.jsx
-│   │   │   │   └── DeleteMessage.jsx
+│   │   │   │   ├── DeleteMessage.jsx
 │   ├── SearchResults.jsx
 │   │   ├── MessageList.jsx
 │   │   │   ├── Message.jsx
 │   │   │   │   ├── ReplyList.jsx
-│   │   │   │   │   └── Reply.jsx
+│   │   │   │   │   ├── Reply.jsx
 │   │   │   │   ├── EditMessage.jsx
-│   │   │   │   └── DeleteMessage.jsx
+│   │   │   │   ├── DeleteMessage.jsx
 │   ├── AdminPanel.jsx
 │   │   ├── AdminMenu.jsx
 │   │   ├── UserValidation.jsx
-│   │   │   └── ValidateUser.jsx
+│   │   │   ├── ValidateUser.jsx
 │   │   ├── AdminFeed.jsx
 │   │   │   ├── MessageList.jsx
 │   │   │   │   ├── Message.jsx
 │   │   │   │   │   ├── ReplyList.jsx
-│   │   │   │   │   │   └── Reply.jsx
+│   │   │   │   │   │   ├── Reply.jsx
 │   │   │   │   │   ├── EditMessage.jsx
-│   │   │   │   │   └── DeleteMessage.jsx
-│   │   │   └── AddMessage.jsx
+│   │   │   │   │   ├── DeleteMessage.jsx
+│   │   │   ├── AddMessage.jsx
 ├── api/messagesAPI.jsx
 ├── api/userAPI.jsx
 ├── api/serverConfig.jsx
-└── context/UserContext.jsx
+├── context/UserContext.jsx
 ```
 
-## 2. Présentation des composants et leur fonctionnement
+## 2. Liste des composants et leur description
 
-### 2.1 Gestion du contexte global
-Nous utilisons `useContext` pour gérer l'état global des utilisateurs.
+### **App**
 
-#### `UserContext.jsx`
-- **Fonction** : Gère l'état de l'utilisateur connecté.
-- **Props** : Aucune.
-- **State** : `user (Object)`, `setUser (Function)`.
-- **Utilisation** : Importé dans `index.jsx` et fourni à toute l'application.
+- **Fonction** : Composant principal gérant la navigation et l'état global.
+- **Props** : Aucune directe.
+- **State** : Utilisateur connecté, statut administrateur.
+- **Composants inclus** : MainPage.
 
-```jsx
-import { createContext, useState } from "react";
+### **MainPage**
 
-export const UserContext = createContext();
-
-export const UserProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
-    return (
-        <UserContext.Provider value={{ user, setUser }}>
-            {children}
-        </UserContext.Provider>
-    );
-};
-```
-
-### 2.2 Gestion des utilisateurs
-
-#### `Signup.jsx`
-- **Fonction** : Permet à un nouvel utilisateur de s'inscrire.
-- **Props** : Aucune.
-- **State** : `name (String)`, `email (String)`, `password (String)`.
-
-#### `UserProfile.jsx`
-- **Fonction** : Affiche le profil d'un utilisateur avec ses messages publiés.
-- **Props** : `user (Object)`.
+- **Fonction** : Page principale affichant la navigation et le contenu central.
+- **Props** : Aucune directe.
 - **State** : Aucun.
-- **Composants enfants** : `UserInfo.jsx`, `UserMessageList.jsx`.
+- **Composants inclus** : NavigationPanel, Feed, UserProfile, SearchResults, AdminPanel.
 
-### 2.3 Fonctionnalités administratives
+### **NavigationPanel**
 
-#### `AdminPanel.jsx`
-- **Fonction** : Interface de gestion des administrateurs.
-- **Props** : `adminActions (Object)`.
-- **State** : `selectedAction (String)`.
-- **Composants enfants** : `AdminMenu.jsx`, `UserValidation.jsx`.
+- **Fonction** : Gère l'authentification des utilisateurs.
+- **Props** : Aucune.
+- **State** : Aucun.
+- **Composants inclus** : Login, Logout, Signup.
 
-#### `UserValidation.jsx`
-- **Fonction** : Permet aux administrateurs d'approuver ou rejeter l'inscription des utilisateurs.
-- **Props** : `pendingUsers (Array)`, `onValidate (Function)`, `onReject (Function)`.
-- **State** : `selectedUser (Object)`, `loading (Boolean)`, `error (String)`.
-- **Composants enfants** : `ValidateUser.jsx`.
+### **Feed**
 
-### 2.4 Recherche et filtres avancés
+- **Fonction** : Affiche les messages du forum.
+- **Props** : Aucun.
+- **State** : Liste des messages.
+- **Composants inclus** : SearchBar, MessageList, AddMessage.
 
-#### `SearchBar.jsx`
-- **Fonction** : Recherche avancée avec filtres.
-- **Props** : `onSearch (Function)`, `filters (Object)`.
-- **State** : `query (String)`, `selectedFilters (Object)`.
+### **MessageList**
 
-## 3. Architecture globale du projet
+- **Fonction** : Liste des messages affichés sur le forum.
+- **Props** : Liste des messages.
+- **State** : Aucun.
+- **Composants inclus** : Message.
 
-- **React Router** pour la gestion des routes.
-- **`useContext`** pour gérer l'état global de l'utilisateur.
-- **Requêtes API** gérées par `server_request.jsx` et `messages_request.jsx`.
-- **Organisation en composants modulaires et réutilisables.**
+### **Message**
 
-## 4. Analyse des interactions et fonctionnalités
+- **Fonction** : Affichage d'un message avec ses réponses.
+- **Props** : Contenu, auteur, date.
+- **State** : Aucun.
+- **Composants inclus** : ReplyList, EditMessage, DeleteMessage.
 
-- **Connexion/inscription** : `Signup.jsx`, `Login.jsx`, `UserContext.jsx`.
-- **Ajout/Suppression de messages** : `AddMessage.jsx`, `MessageList.jsx`, `UserProfile.jsx`.
-- **Gestion administrateur** : `AdminPanel.jsx`, `UserValidation.jsx`.
-- **Recherche avancée** : `SearchBar.jsx` avec filtres par mots-clés, auteur et date.
-- **Contrôle des permissions** : `MainPage.jsx` gère l'accès des utilisateurs et administrateurs.
+### **ReplyList**
+
+- **Fonction** : Liste des réponses à un message.
+- **Props** : Liste des réponses.
+- **State** : Aucun.
+- **Composants inclus** : Reply.
+
+### **Reply**
+
+- **Fonction** : Affichage d'une réponse.
+- **Props** : Contenu, auteur, date.
+- **State** : Aucun.
+- **Composants inclus** : Aucun.
+
+### **UserProfile**
+
+- **Fonction** : Affichage du profil utilisateur.
+- **Props** : Aucune.
+- **State** : Aucun.
+- **Composants inclus** : UserInfo, UserSettings, UserMessageList.
+
+### **AdminPanel**
+
+- **Fonction** : Gère les actions administratives.
+- **Props** : Aucune.
+- **State** : Aucun.
+- **Composants inclus** : AdminMenu, UserValidation, AdminFeed.
+
+### **UserValidation**
+
+- **Fonction** : Gestion des inscriptions et validation des utilisateurs.
+- **Props** : Liste des utilisateurs en attente.
+- **State** : Aucun.
+- **Composants inclus** : ValidateUser.
+
+### **AdminFeed**
+
+- **Fonction** : Affichage des discussions du forum privé.
+- **Props** : Aucun.
+- **State** : Aucun.
+- **Composants inclus** : MessageList, AddMessage.
+
+### **Hooks et API**
+
+- **useAuth.jsx** : Gère l'authentification des utilisateurs.
+
+- **useMessages.jsx** : Gère la récupération et l'envoi des messages.
+
+- **messagesAPI.jsx** : Interface avec l'API pour la gestion des messages.
+
+- **userAPI.jsx** : Interface avec l'API pour la gestion des utilisateurs
+
+- **serverConfig.jsx** : Contient la configuration du serveur.
+
+- **UserContext.jsx** : Gère le contexte global utilisateur.
 
