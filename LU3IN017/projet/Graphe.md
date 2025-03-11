@@ -192,6 +192,12 @@ App (index.jsx)
 - **State** : Aucun.
 - **Composants inclus** : AdminMenu, UserValidation, AdminFeed.
 
+### **AdminMenu**  
+- **Fonction** : Menu permettant d’accéder aux outils d’administration.  
+- **Props** : Aucun.  
+- **State** : `selectedSection` (string) – Section en cours d’affichage.  
+- **Composants inclus** : Aucun.
+
 ### **UserValidation**
 
 - **Fonction** : Gestion des inscriptions et validation des utilisateurs.
@@ -204,13 +210,7 @@ App (index.jsx)
 - **Fonction** : Affichage des discussions du forum privé.
 - **Props** : Aucun.
 - **State** : Aucun.
-- **Composants inclus** : MessageList, AddMessage. 
-
-### **AdminMenu**  
-- **Fonction** : Menu permettant d’accéder aux outils d’administration.  
-- **Props** : Aucun.  
-- **State** : `selectedSection` (string) – Section en cours d’affichage.  
-- **Composants inclus** : Aucun.  
+- **Composants inclus** : MessageList, AddMessage.  
 
 ### **ValidateUser**  
 - **Fonction** : Permet d’approuver ou rejeter les utilisateurs en attente.  
