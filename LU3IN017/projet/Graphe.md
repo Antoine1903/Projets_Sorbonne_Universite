@@ -77,6 +77,24 @@ App (index.jsx)
 - **State** : Aucun.
 - **Composants inclus** : Login, Logout, Signup.
 
+### **Login**  
+- **Fonction** : Permet à un utilisateur de se connecter.  
+- **Props** : `onLoginSuccess(user)` – Fonction appelée après une connexion réussie.  
+- **State** : `email` (string), `password` (string), `loading` (bool) – État du formulaire et de la requête.  
+- **Composants inclus** : Aucun.  
+
+### **Logout**  
+- **Fonction** : Permet à un utilisateur de se déconnecter.  
+- **Props** : `onLogout()` – Fonction déclenchée à la déconnexion.  
+- **State** : Aucun.  
+- **Composants inclus** : Aucun.  
+
+### **Signup**  
+- **Fonction** : Permet à un utilisateur de créer un compte.  
+- **Props** : `onSignupSuccess(user)` – Fonction appelée après l'inscription.  
+- **State** : `email` (string), `password` (string), `confirmPassword` (string), `loading` (bool) – État du formulaire et de la requête.  
+- **Composants inclus** : Aucun.
+
 ### **Feed**
 
 - **Fonction** : Affiche les messages du forum.
@@ -139,24 +157,6 @@ App (index.jsx)
 - **Props** : Aucun.
 - **State** : Aucun.
 - **Composants inclus** : MessageList, AddMessage.
-
-### **Login**  
-- **Fonction** : Permet à un utilisateur de se connecter.  
-- **Props** : `onLoginSuccess(user)` – Fonction appelée après une connexion réussie.  
-- **State** : `email` (string), `password` (string), `loading` (bool) – État du formulaire et de la requête.  
-- **Composants inclus** : Aucun.  
-
-### **Logout**  
-- **Fonction** : Permet à un utilisateur de se déconnecter.  
-- **Props** : `onLogout()` – Fonction déclenchée à la déconnexion.  
-- **State** : Aucun.  
-- **Composants inclus** : Aucun.  
-
-### **Signup**  
-- **Fonction** : Permet à un utilisateur de créer un compte.  
-- **Props** : `onSignupSuccess(user)` – Fonction appelée après l'inscription.  
-- **State** : `email` (string), `password` (string), `confirmPassword` (string), `loading` (bool) – État du formulaire et de la requête.  
-- **Composants inclus** : Aucun.  
 
 ### **SearchBar**  
 - **Fonction** : Permet d’effectuer une recherche dans les messages.  
