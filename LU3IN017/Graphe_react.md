@@ -97,51 +97,7 @@ App (index.jsx)
 - **State** : `selectedUser (Object)`
 - **Composants enfants** : `AsideValidationUser.jsx`
 
----------------------------------------------------------------
-# Document de mi-projet - Organiz’asso
-
-## 1. Graphe des dépendances mutuelles entre composants
-
-Voici une représentation schématique des dépendances entre les composants React du projet Organiz’asso :
-
-```plaintext
-App (index.jsx)
-├── MainPage.jsx
-│   ├── NavigationPanel.jsx
-│   │   ├── Login.jsx
-│   │   └── Logout.jsx
-│   ├── Feed.jsx
-│   │   ├── SearchBar.jsx
-│   │   ├── MessageList.jsx
-│   │   │   ├── Message.jsx
-│   │   │   │   └── ReplyList.jsx
-│   │   │   │       └── Reply.jsx
-│   │   └── AddMessage.jsx
-│   ├── User.jsx
-│   │   ├── MessageList.jsx
-│   │   │   └── Message.jsx
-│   │   │       └── ReplyList.jsx
-│   │   │           └── Reply.jsx
-│   ├── Result.jsx
-│   │   ├── MessageList.jsx
-│   │   │   └── Message.jsx
-│   │   │       └── ReplyList.jsx
-│   │   │           └── Reply.jsx
-│   ├── AsideAdmin.jsx
-│   │   ├── AsideMenu.jsx
-│   │   └── AsideValidation.jsx
-│   │       └── AsideValidationUser.jsx
-│   ├── FeedAdmin.jsx
-│   │   ├── MessageList.jsx
-│   │   │   ├── Message.jsx
-│   │   │   │   └── ReplyList.jsx
-│   │   │   │       └── Reply.jsx
-│   │   └── AddMessage.jsx
-├── messages_request.jsx
-└── server_request.jsx
-```
-
-## 2. Présentation détaillée des composants
+----------------------------------------------------
 
 ### index.jsx
 - **Fonction** : Point d'entrée de l'application, rend le composant `MainPage`.
@@ -245,7 +201,62 @@ App (index.jsx)
 - **États** : Non applicable.
 - **Composants enfants** : Aucun.
 
-... (Continuer avec tous les autres composants JSX restants)
+### SearchBar.jsx
+**Fonction :**
+SearchBar permet aux utilisateurs de rechercher des messages en fonction de mots-clés, d'une période de temps ou d'un auteur spécifique.
+
+**Props :**
+- `onSearch`: (fonction) Callback pour exécuter la recherche.
+- `placeholder`: (string, optionnel) Texte affiché dans la barre de recherche.
+
+**États :**
+- `query`: (string) Stocke le texte de la recherche en cours.
+
+**Composants inclus :**
+- Aucun.
+
+### AddMessage.jsx
+**Fonction :**
+Permet aux utilisateurs de publier de nouveaux messages sur le forum.
+
+**Props :**
+- `onMessageAdded`: (fonction) Callback pour rafraîchir la liste des messages après l’ajout.
+
+**États :**
+- `messageContent`: (string) Contenu du message saisi par l'utilisateur.
+- `error`: (string) Stocke les erreurs éventuelles.
+
+**Composants inclus :**
+- Aucun.
+
+### AsideMenu.jsx
+**Fonction :**
+Affiche un menu latéral permettant aux utilisateurs de naviguer dans différentes sections du site.
+
+**Props :**
+- `userRole`: (string) Définit si l'utilisateur est un administrateur ou un membre standard.
+
+**États :**
+- `activeSection`: (string) Définit la section actuellement sélectionnée.
+
+**Composants inclus :**
+- Aucun.
+
+### AsideValidation.jsx
+**Fonction :**
+Affiche une liste des nouvelles inscriptions en attente de validation par un administrateur.
+
+**Props :**
+- `pendingUsers`: (array) Liste des utilisateurs en attente d’approbation.
+- `onValidate`: (fonction) Callback pour valider un utilisateur.
+- `onReject`: (fonction) Callback pour rejeter une inscription.
+
+**États :**
+- `loading`: (booléen) Indique si les données sont en cours de récupération.
+- `error`: (string) Stocke un message d’erreur potentiel.
+
+**Composants inclus :**
+- `AsideValidationUser.jsx`
 
 -------------------------------------------------------
 
