@@ -140,11 +140,67 @@ App (index.jsx)
 - **State** : Aucun.
 - **Composants inclus** : MessageList, AddMessage.
 
+### **Login**  
+- **Fonction** : Permet à un utilisateur de se connecter.  
+- **Props** : `onLoginSuccess(user)` – Fonction appelée après une connexion réussie.  
+- **State** : `email` (string), `password` (string), `loading` (bool) – État du formulaire et de la requête.  
+- **Composants inclus** : Aucun.  
+
+### **Logout**  
+- **Fonction** : Permet à un utilisateur de se déconnecter.  
+- **Props** : `onLogout()` – Fonction déclenchée à la déconnexion.  
+- **State** : Aucun.  
+- **Composants inclus** : Aucun.  
+
+### **Signup**  
+- **Fonction** : Permet à un utilisateur de créer un compte.  
+- **Props** : `onSignupSuccess(user)` – Fonction appelée après l'inscription.  
+- **State** : `email` (string), `password` (string), `confirmPassword` (string), `loading` (bool) – État du formulaire et de la requête.  
+- **Composants inclus** : Aucun.  
+
+### **SearchBar**  
+- **Fonction** : Permet d’effectuer une recherche dans les messages.  
+- **Props** : `onSearch(query)` – Fonction appelée lors d’une recherche.  
+- **State** : `query` (string) – Terme recherché.  
+- **Composants inclus** : Aucun.  
+
+### **UserInfo**  
+- **Fonction** : Affiche les informations d’un utilisateur.  
+- **Props** : `user` (objet) – Données de l’utilisateur.  
+- **State** : Aucun.  
+- **Composants inclus** : Aucun.  
+
+### **UserSettings**  
+- **Fonction** : Permet à un utilisateur de modifier ses paramètres (email, mot de passe, préférences).  
+- **Props** : `user` (objet) – Informations de l’utilisateur actuel.  
+- **State** : `email` (string), `password` (string), `notifications` (bool) – États modifiables.  
+- **Composants inclus** : Aucun.  
+
+### **UserMessageList**  
+- **Fonction** : Affiche les messages publiés par un utilisateur.  
+- **Props** : `userId` (string) – Identifiant de l’utilisateur.  
+- **State** : `messages` (array) – Liste des messages.  
+- **Composants inclus** : `Message`.  
+
+### **SearchResults**  
+- **Fonction** : Affiche les résultats d’une recherche de messages.  
+- **Props** : `results` (array) – Liste des messages trouvés.  
+- **State** : Aucun.  
+- **Composants inclus** : `MessageList`.  
+
+### **AdminMenu**  
+- **Fonction** : Menu permettant d’accéder aux outils d’administration.  
+- **Props** : Aucun.  
+- **State** : `selectedSection` (string) – Section en cours d’affichage.  
+- **Composants inclus** : Aucun.  
+
+### **ValidateUser**  
+- **Fonction** : Permet d’approuver ou rejeter les utilisateurs en attente.  
+- **Props** : `user` (objet) – Informations de l’utilisateur à valider.  
+- **State** : Aucun.  
+- **Composants inclus** : Aucun.  
+
 ### **Hooks et API**
-
-- **useAuth.jsx** : Gère l'authentification des utilisateurs.
-
-- **useMessages.jsx** : Gère la récupération et l'envoi des messages.
 
 - **messagesAPI.jsx** : Interface avec l'API pour la gestion des messages.
 
