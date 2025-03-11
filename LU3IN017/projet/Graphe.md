@@ -205,18 +205,18 @@ App (index.jsx)
 - **State** : Aucun.
 - **Composants inclus** : ValidateUser.
 
+### **ValidateUser**  
+- **Fonction** : Permet d’approuver ou rejeter les utilisateurs en attente.  
+- **Props** : `user` (objet) – Informations de l’utilisateur à valider.  
+- **State** : Aucun.  
+- **Composants inclus** : Aucun.
+
 ### **AdminFeed**
 
 - **Fonction** : Affichage des discussions du forum privé.
 - **Props** : Aucun.
 - **State** : Aucun.
-- **Composants inclus** : MessageList, AddMessage.  
-
-### **ValidateUser**  
-- **Fonction** : Permet d’approuver ou rejeter les utilisateurs en attente.  
-- **Props** : `user` (objet) – Informations de l’utilisateur à valider.  
-- **State** : Aucun.  
-- **Composants inclus** : Aucun.  
+- **Composants inclus** : MessageList, AddMessage.   
 
 ### api/messagesAPI
 - **Fonction :** Gestion des requêtes liées aux messages (création, modification, suppression).
