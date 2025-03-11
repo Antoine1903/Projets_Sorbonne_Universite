@@ -179,6 +179,12 @@ App (index.jsx)
 - **State** : `messages` (array) – Liste des messages.  
 - **Composants inclus** : `Message`.  
 
+### **SearchResults**  
+- **Fonction** : Affiche les résultats d’une recherche de messages.  
+- **Props** : `results` (array) – Liste des messages trouvés.  
+- **State** : Aucun.  
+- **Composants inclus** : `MessageList`.
+
 ### **AdminPanel**
 
 - **Fonction** : Gère les actions administratives.
@@ -199,12 +205,6 @@ App (index.jsx)
 - **Props** : Aucun.
 - **State** : Aucun.
 - **Composants inclus** : MessageList, AddMessage. 
-
-### **SearchResults**  
-- **Fonction** : Affiche les résultats d’une recherche de messages.  
-- **Props** : `results` (array) – Liste des messages trouvés.  
-- **State** : Aucun.  
-- **Composants inclus** : `MessageList`.  
 
 ### **AdminMenu**  
 - **Fonction** : Menu permettant d’accéder aux outils d’administration.  
