@@ -27,6 +27,9 @@
 \begin{document}
 \maketitle
 
+\section*{Introduction}
+Organiz'Asso est une plateforme permettant aux utilisateurs d'échanger des messages et de gérer des discussions. L'architecture repose sur React pour le front-end, avec une organisation en plusieurs composants interconnectés. Ce document décrit les composants clés de notre projet ainsi que leurs dépendances réciproques.
+
 \section*{Graphe des dépendances des composants React}
 Le graphe suivant montre les relations entre les composants React du projet, mettant en évidence les dépendances mutuelles et la hiérarchie des composants.
 
@@ -100,13 +103,13 @@ App (index.jsx)
 \subsection*{MainPage}
 \textbf{Fonction} : Page principale affichant la navigation et le contenu central.\\
 \textbf{Props} : Aucune directe.\\
-\textbf{State} : Aucun.\\
+\textbf{State} : currentView (string) – Vue actuellement affichée.\\
 \textbf{Composants inclus} : NavigationPanel, Feed, UserProfile, SearchResults, AdminPanel.
 
 \subsection*{NavigationPanel}
 \textbf{Fonction} : Gère l'authentification des utilisateurs.\\
 \textbf{Props} : Aucune.\\
-\textbf{State} : Aucun.\\
+\textbf{State} : Aucun (utilise UserContext).\\
 \textbf{Composants inclus} : Login, Logout, Signup.
 
 \subsection*{Login}
@@ -129,7 +132,7 @@ App (index.jsx)
 
 \subsection*{Feed}
 \textbf{Fonction} : Affiche les messages du forum.\\
-\textbf{Props} : Aucun.\\
+\textbf{Props} : messages (array) – Liste des messages.\\
 \textbf{State} : Liste des messages.\\
 \textbf{Composants inclus} : SearchBar, MessageList, AddMessage.
 
@@ -148,7 +151,7 @@ App (index.jsx)
 \subsection*{Message}
 \textbf{Fonction} : Affichage d'un message avec ses réponses.\\
 \textbf{Props} : Contenu, auteur, date.\\
-\textbf{State} : Aucun.\\
+\textbf{State} : isEditing (bool) – Indique si le message est en cours d'édition.\\
 \textbf{Composants inclus} : ReplyList, EditMessage, DeleteMessage.
 
 \subsection*{ReplyList}
@@ -184,7 +187,7 @@ App (index.jsx)
 \subsection*{UserProfile}
 \textbf{Fonction} : Affichage du profil utilisateur.\\
 \textbf{Props} : Aucune.\\
-\textbf{State} : Aucun.\\
+\textbf{State} : userInfo (objet) – Informations de l'utilisateur connecté.\\
 \textbf{Composants inclus} : UserInfo, UserSettings, UserMessageList.
 
 \subsection*{UserInfo}
@@ -214,7 +217,7 @@ App (index.jsx)
 \subsection*{AdminPanel}
 \textbf{Fonction} : Gère les actions administratives.\\
 \textbf{Props} : Aucune.\\
-\textbf{State} : Aucun.\\
+\textbf{State} : selectedSection (string) – Section en cours.\\
 \textbf{Composants inclus} : AdminMenu, UserValidation, AdminFeed.
 
 \subsection*{AdminMenu}
