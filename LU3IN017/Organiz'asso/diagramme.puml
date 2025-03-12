@@ -1,0 +1,116 @@
+@startuml
+skinparam style strictuml
+
+class App {
+  - utilisateurConnecte: bool
+  - statutAdmin: bool
+}
+
+class MainPage {
+  - currentView: string
+}
+
+class NavigationPanel
+class Login {
+  - email: string
+  - password: string
+  - loading: bool
+}
+class Logout
+class Signup {
+  - email: string
+  - password: string
+  - confirmPassword: string
+  - loading: bool
+}
+
+class Feed {
+  - messages: array
+}
+class SearchBar {
+  - query: string
+}
+class MessageList
+class Message {
+  - isEditing: bool
+}
+class ReplyList
+class Reply
+class EditMessage {
+  - newMessageContent: string
+}
+class DeleteMessage
+class AddMessage {
+  - newMessageContent: string
+}
+
+class UserProfile {
+  - userInfo: object
+}
+class UserInfo
+class UserSettings {
+  - email: string
+  - password: string
+  - notifications: bool
+}
+class UserMessageList
+
+class SearchResults
+class AdminPanel {
+  - selectedSection: string
+}
+class AdminMenu
+class UserValidation
+class ValidateUser
+class AdminFeed
+
+class messagesAPI
+class userAPI
+class serverConfig
+class UserContext {
+  - user: object
+  - isAuthenticated: bool
+}
+
+App --> MainPage
+MainPage --> NavigationPanel
+MainPage --> Feed
+MainPage --> UserProfile
+MainPage --> SearchResults
+MainPage --> AdminPanel
+
+NavigationPanel --> Login
+NavigationPanel --> Logout
+NavigationPanel --> Signup
+
+Feed --> SearchBar
+Feed --> MessageList
+Feed --> AddMessage
+
+MessageList --> Message
+Message --> ReplyList
+ReplyList --> Reply
+Message --> EditMessage
+Message --> DeleteMessage
+
+UserProfile --> UserInfo
+UserProfile --> UserSettings
+UserProfile --> UserMessageList
+UserMessageList --> Message
+
+SearchResults --> MessageList
+
+AdminPanel --> AdminMenu
+AdminPanel --> UserValidation
+UserValidation --> ValidateUser
+AdminPanel --> AdminFeed
+AdminFeed --> MessageList
+AdminFeed --> AddMessage
+
+App --> UserContext
+App --> messagesAPI
+App --> userAPI
+messagesAPI --> serverConfig
+userAPI --> serverConfig
+
+@enduml
