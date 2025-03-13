@@ -34,32 +34,38 @@ def exp(a, n, p):
     result = 1
     a = a % p
     while n > 0:
-        if n % 2 == 1:  # If n is odd, multiply result with a
+        if n % 2 == 1:
             result = (result * a) % p
-        a = (a * a) % p  # Square a
+        a = (a * a) % p
         n //= 2
     return result
 
 
 #Q2
 def factor(n):
-    factors = {}
+    factors = []
     i = 2
     while i * i <= n:
+        count = 0
         while n % i == 0:
-            factors[i] = factors.get(i, 0) + 1
+            count += 1
             n //= i
+        if count > 0:
+            factors.append((i, count))
         i += 1
     if n > 1:
-        factors[n] = 1
+        factors.append((n, 1))
     return factors
 
 
 #Q3
 def order(a, p, factors_p_minus1):
     phi_p = p - 1
-    for factor in factors_p_minus1.keys():
-        k = phi_p // factor
+    divisors = sorted(set(
+        phi_p // (factor**exp) for factor, exp in factors_p_minus1 for exp in range(1, exp + 1)
+    ))
+
+    for k in divisors:
         if exp(a, k, p) == 1:
             return k
     return phi_p
@@ -93,6 +99,6 @@ def bsgs(n, g, p):
     for j in range(m):
         if gamma in baby_steps:
             return j * m + baby_steps[gamma]
-        gamma = (gamma * factor) % p  # Move by step size g^(-m)
+        gamma = (gamma * factor) % p
     
-    return None  # No solution found
+    return None
