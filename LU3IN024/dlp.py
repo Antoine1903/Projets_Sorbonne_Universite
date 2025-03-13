@@ -20,40 +20,79 @@ def inv_mod(a, n):
 
 
 def invertibles(N):
-    return
+    return [x for x in range(1, N) if bezout(x, N)[0] == 1]
 
 
 #Q3
 def phi(N):
-    return
+    return sum(1 for x in range(1, N) if bezout(x, N)[0] == 1)
 
 
 #Exercice 2
 #Q1
 def exp(a, n, p):
-    return
+    result = 1
+    a = a % p
+    while n > 0:
+        if n % 2 == 1:  # If n is odd, multiply result with a
+            result = (result * a) % p
+        a = (a * a) % p  # Square a
+        n //= 2
+    return result
 
 
 #Q2
 def factor(n):
-    return
+    factors = {}
+    i = 2
+    while i * i <= n:
+        while n % i == 0:
+            factors[i] = factors.get(i, 0) + 1
+            n //= i
+        i += 1
+    if n > 1:
+        factors[n] = 1
+    return factors
 
 
 #Q3
 def order(a, p, factors_p_minus1):
-    return
+    phi_p = p - 1
+    for factor in factors_p_minus1.keys():
+        k = phi_p // factor
+        if exp(a, k, p) == 1:
+            return k
+    return phi_p
 
 
 #Q4
 def find_generator(p, factors_p_minus1):
-    return
+    for g in range(2, p):
+        if all(exp(g, (p - 1) // factor, p) != 1 for factor in factors_p_minus1):
+            return g
+    return None
 
 
 #Q5
 def generate_safe_prime(k):
-    return
+    while True:
+        q = is_probable_prime(k - 1)
+        p = 2 * q + 1
+        if is_probable_prime(p):
+            return p
 
 
 #Q6
 def bsgs(n, g, p):
-    return
+    m = int(sqrt(p)) + 1
+    baby_steps = {exp(g, i, p): i for i in range(m)}
+    
+    factor = inv_mod(exp(g, m, p), p)  # g^(-m) mod p
+    gamma = n
+    
+    for j in range(m):
+        if gamma in baby_steps:
+            return j * m + baby_steps[gamma]
+        gamma = (gamma * factor) % p  # Move by step size g^(-m)
+    
+    return None  # No solution found
