@@ -61,9 +61,18 @@ def factor(n):
 #Q3
 def order(a, p, factors_p_minus1):
     phi_p = p - 1
-    divisors = sorted(set(
-        phi_p // (factor**exp) for factor, exp in factors_p_minus1 for exp in range(1, exp + 1)
-    ))
+
+    def get_divisors(n):
+        divisors = {1}
+        for prime, exponent in factors_p_minus1:
+            new_divisors = set()
+            for d in divisors:
+                for i in range(exponent + 1):
+                    new_divisors.add(d * (prime ** i))
+            divisors |= new_divisors
+        return sorted(divisors)
+
+    divisors = get_divisors(phi_p)
 
     for k in divisors:
         if exp(a, k, p) == 1:
@@ -74,7 +83,7 @@ def order(a, p, factors_p_minus1):
 #Q4
 def find_generator(p, factors_p_minus1):
     for g in range(2, p):
-        if all(exp(g, (p - 1) // factor, p) != 1 for factor in factors_p_minus1):
+        if all(exp(g, (p - 1) // factor[0], p) != 1 for factor in factors_p_minus1):  
             return g
     return None
 
@@ -82,7 +91,10 @@ def find_generator(p, factors_p_minus1):
 #Q5
 def generate_safe_prime(k):
     while True:
-        q = is_probable_prime(k - 1)
+        q = random.getrandbits(k - 1) | 1
+        while not is_probable_prime(q):
+            q = random.getrandbits(k - 1) | 1
+        
         p = 2 * q + 1
         if is_probable_prime(p):
             return p
@@ -93,7 +105,7 @@ def bsgs(n, g, p):
     m = int(sqrt(p)) + 1
     baby_steps = {exp(g, i, p): i for i in range(m)}
     
-    factor = inv_mod(exp(g, m, p), p)  # g^(-m) mod p
+    factor = inv_mod(exp(g, m, p), p)
     gamma = n
     
     for j in range(m):
