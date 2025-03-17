@@ -17,7 +17,8 @@
 
 /* definition des semaphores */ 
 
-int mutex;        // Protection de l'accès concurrent
+int mutex_e;      // Mutex pour synchroniser l'écriture
+int mutex_r;      // Mutex pour synchroniser la lecture
 int vide;         // Nombre de cases vides
 int plein;        // Nombre de cases pleines
 
@@ -26,13 +27,12 @@ int plein;        // Nombre de cases pleines
 
 /* definition de la memoire partagee */ 
 
-typedef struct {
-	int buffer[NMAX];
+struct {
+	int messages[NMAX];
+    int nb_recepteurs[NMAX];
 	int index_ecriture;
 	int index_lecture;
-}shared_data;
-
-shared_data *sp;
+}*sp;
 
 /************************************************************/
 
@@ -49,27 +49,25 @@ void handle_sigint(int sig) {
 	for (i = 0; i < NR; i++) kill(recep_pid[i], SIGKILL); 
 	det_sem(); 
 	det_shm((char *)sp); 
- 
+    exit(0);
 } 
 
 /************************************************************/
 
 /* fonction EMETTEUR */ 
 
-void emetteur(int id) {
-	int message = 100 + id; // Exemple de message unique pour chaque émetteur
+void emetteur() {
 	while (1) {
 		P(vide);       // Attente d'une case vide
-		P(mutex);      // Accès exclusif au tampon
+		P(mutex_e);      // Accès exclusif à l'écriture
 			
-		sp->buffer[sp->index_ecriture] = message;
-		printf("Emetteur %d a écrit %d dans la case %d\n", id, message, sp->index_ecriture);
+		sp->messages[sp->index_ecriture] = rand() % 100;
+        sp->nb_recepteurs[sp->index_ecriture] = 0;
+        printf("Émetteur %d a envoyé %d dans la case %d\n", getpid(), sp->messages[sp->index_ecriture], sp->index_ecriture);
 		sp->index_ecriture = (sp->index_ecriture + 1) % NMAX;
 			
-		V(mutex);      // Libération de l'accès au tampon
+		V(mutex_e);
 		V(plein);      // Signal qu'une case est pleine
-
-		sleep(1);      // Simulation de délai
 	}
 }
 
@@ -80,16 +78,17 @@ void emetteur(int id) {
 void recepteur(int id) {
     while (1) {
         P(plein);      // Attente d'une case pleine
-        P(mutex);      // Accès exclusif au tampon
+        P(mutex_r);      // Accès exclusif à la lecture
 
-        int message = sp->buffer[sp->index_lecture];
-        printf("Recepteur %d a lu %d de la case %d\n", id, message, sp->index_lecture);
-        sp->index_lecture = (sp->index_lecture + 1) % NMAX;
+        printf("Recepteur %d a reçu %d de la case %d\n", getpid(), sp->messages[sp->index_lecture], sp->index_lecture);
+        sp->nb_recepteurs[sp->index_lecture]++;
 
-        V(mutex);      // Libération de l'accès au tampon
-        V(vide);       // Signal qu'une case est vide
-
-        sleep(1);      // Simulation de traitement
+        if (sp->nb_recepteurs[sp->index_lecture] == NR) {
+            sp->nb_recepteurs[sp->index_lecture] = 0; // Réinitialisation du compteur
+            sp->index_lecture = (sp->index_lecture + 1) % NMAX;
+            V(vide);
+        }
+        V(mutex_r);       // Signal qu'une case est vide
     }
 }
 
@@ -103,19 +102,29 @@ int main() {
 
 /* Creation du segment de memoire partagee */
 
-	sp = (shared_data *)init_shm(sizeof(shared_data));
+	sp = init_shm(sizeof(*sp));
+    if (!sp) {
+        perror("Erreur allocation mémoire partagée");
+        exit(1);
+    }
+
     sp->index_ecriture = 0;
     sp->index_lecture = 0;
+    for (int i = 0; i < NMAX; i++) {
+        sp->nb_recepteurs[i] = 0;
+    }
 
 /* creation des semaphores */ 
 
-	mutex = creer_sem(1);       // Sémaphore pour l'exclusion mutuelle
-    vide = creer_sem(NMAX);     // N cases vides au début
-    plein = creer_sem(0);       // 0 cases pleines au début
+	mutex_e = creer_sem(1);
+    mutex_r = creer_sem(1);
+    vide = creer_sem(1);
+    plein = creer_sem(1);
 
 /* initialisation des semaphores */ 
 
-    init_un_sem(mutex, 1);  // Exclusion mutuelle : initialisé à 1
+    init_un_sem(mutex_e, 1);
+    init_un_sem(mutex_r, 1);
     init_un_sem(vide, NMAX); // NMAX cases vides
     init_un_sem(plein, 0);   // Aucune case pleine au début
     
@@ -123,7 +132,7 @@ int main() {
 
 	for (int i = 0; i < NE; i++) {
         if ((emet_pid[i] = fork()) == 0) {
-            emetteur(i);
+            emetteur();
             exit(0);
         }
     }

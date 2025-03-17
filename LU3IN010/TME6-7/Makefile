@@ -1,7 +1,7 @@
 IPCPATH = /Infos/lmd/2022/licence/ue/LU3IN010-2023fev/libipc/libipc//lib 
 CFLAGS = -Wall -I$(IPCPATH)
 
-all: Tab1case TabNcases  
+all: Tab1case TabNcase  
 
 Tab1case: Tab1case.o
 	gcc -o Tab1case Tab1case.o -L$(IPCPATH) -lIPC
