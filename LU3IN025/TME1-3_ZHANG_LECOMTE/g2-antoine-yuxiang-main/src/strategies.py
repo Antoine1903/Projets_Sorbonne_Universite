@@ -11,24 +11,16 @@ def strategie_stochastique(pos_restaurants, probabilites):
     """Stratégie stochastique : le joueur choisit un restaurant selon une distribution de probabilité."""
     return random.choices(pos_restaurants, weights=probabilites, k=1)[0]
 
-def strategie_greedy(pos_restaurants, nb_players_in_resto, seuil, current_pos, visited_restaurants, iterations, i):
-    """Stratégie greedy : le joueur se dirige vers un restaurant aléatoire et vérifie l'occupation à chaque étape."""
-    # Choisir un restaurant aléatoire initialement
-    target_resto = random.choice(pos_restaurants)
-
-    # Vérifier l'occupation du restaurant actuel
-    if current_pos in pos_restaurants:
-        r = pos_restaurants.index(current_pos)
-        if nb_players_in_resto(r) - 1 < seuil:
-            return current_pos  # Rester dans le restaurant actuel
-
-    # Si le restaurant actuel est trop occupé ou si le joueur n'est pas dans un restaurant, aller vers le restaurant cible
-    if len(visited_restaurants) == len(pos_restaurants) or (iterations - i) <= len(pos_restaurants):
-        # Augmenter le seuil si tous les restaurants ont été visités ou s'il n'y a plus assez de temps
-        seuil += 1
-        visited_restaurants.clear()
-
-    # Marquer le restaurant comme visité
-    visited_restaurants.add(target_resto)
-
-    return target_resto
+def strategie_greedy(pos_restaurants, nb_players_in_resto, seuil, position_joueur, visited_restaurants, iterations, joueur_id, champ_de_vision):
+    scores_restos = []
+    for r in range(len(pos_restaurants)):
+        pos = pos_restaurants[r]
+        if pos in visited_restaurants:
+            continue
+        if pos in champ_de_vision:
+            joueurs_present = nb_players_in_resto(r)
+            if joueurs_present < seuil:
+                scores_restos.append((joueurs_present, pos))
+    if scores_restos:
+        return min(scores_restos)[1]
+    return random.choice(pos_restaurants)

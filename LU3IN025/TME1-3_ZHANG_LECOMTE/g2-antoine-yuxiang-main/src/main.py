@@ -39,6 +39,16 @@ def init(_boardname=None):
     game.mainiteration()
     player = game.player
 
+def champ_vision(position, taille_vision, nb_lignes, nb_cols):
+    x, y = position
+    vision = []
+    for i in range(-taille_vision, taille_vision + 1):
+        for j in range(-taille_vision, taille_vision + 1):
+            new_x, new_y = x + i, y + j
+            if 0 <= new_x < nb_lignes and 0 <= new_y < nb_cols:
+                vision.append((new_x, new_y))
+    return vision
+
 def main(nb_jours):
     iterations = 40  # nb de pas max par episode
     if len(sys.argv) == 2:
