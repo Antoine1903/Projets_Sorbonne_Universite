@@ -11,16 +11,51 @@ def strategie_stochastique(pos_restaurants, probabilites):
     """Stratégie stochastique : le joueur choisit un restaurant selon une distribution de probabilité."""
     return random.choices(pos_restaurants, weights=probabilites, k=1)[0]
 
-def strategie_greedy(pos_restaurants, nb_players_in_resto, seuil, position_joueur, visited_restaurants, iterations, joueur_id, champ_de_vision):
-    scores_restos = []
-    for r in range(len(pos_restaurants)):
-        pos = pos_restaurants[r]
-        if pos in visited_restaurants:
-            continue
-        if pos in champ_de_vision:
-            joueurs_present = nb_players_in_resto(r)
-            if joueurs_present < seuil:
-                scores_restos.append((joueurs_present, pos))
-    if scores_restos:
-        return min(scores_restos)[1]
-    return random.choice(pos_restaurants)
+def strategie_greedy(pos_restaurants, nb_players_in_resto, seuil, position_joueur, champ_de_vision, temps_restant, joueur_id, prefs_restaurants):
+    """
+    Stratégie greedy améliorée :
+    - Les joueurs ont une liste de préférences de restaurants.
+    - Lorsqu'un joueur entre dans un restaurant, ceux qui le voient recalculent leur décision.
+    - Si le seuil est atteint, le joueur cherche un autre restaurant de sa liste.
+    - Si tous les restaurants dépassent son seuil, il va au plus proche avec le moins de joueurs.
+    - Si le temps manque pour changer, il reste dans le restaurant atteint.
+    """
+    
+    # Trier les restaurants préférés du joueur
+    preferences = sorted(prefs_restaurants[joueur_id], key=lambda r: pos_restaurants.index(r))
+    
+    for resto in preferences:
+        nb_joueurs = nb_players_in_resto(pos_restaurants.index(resto))
+        
+        # Calcul de la distance au restaurant
+        distance = abs(position_joueur[0] - resto[0]) + abs(position_joueur[1] - resto[1])
+        
+        # Si ce restaurant n'est pas encore au seuil et que le temps restant est suffisant, on y va
+        if nb_joueurs < seuil and distance <= temps_restant:
+            return resto
+    
+    # Si tous les restaurants préférés dépassent le seuil :
+    # Trouver le restaurant le plus proche avec le moins de joueurs
+    best_choice = None
+    best_score = float('inf')
+
+    for resto in pos_restaurants:
+        if resto in champ_de_vision:  # Vérification des restaurants visibles
+            nb_joueurs = nb_players_in_resto(pos_restaurants.index(resto))
+            
+            # Score basé sur la distance et le nombre de joueurs (moins = mieux)
+            distance = abs(position_joueur[0] - resto[0]) + abs(position_joueur[1] - resto[1])
+            
+            # Vérifier que le joueur a assez de temps pour y aller
+            if distance > temps_restant:
+                continue
+            
+            score = (nb_joueurs, distance)  # Priorité à moins de joueurs, puis distance
+            
+            if score < best_score:
+                best_score = score
+                best_choice = resto
+
+    # Si aucun bon choix trouvé (peu probable), choisir au hasard parmi les accessibles en temps_restant
+    possibles = [r for r in pos_restaurants if abs(position_joueur[0] - r[0]) + abs(position_joueur[1] - r[1]) <= temps_restant]
+    return best_choice if best_choice else (random.choice(possibles) if possibles else None)
