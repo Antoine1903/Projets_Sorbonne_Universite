@@ -35,19 +35,9 @@ def init(_boardname=None):
     game = Game('Cartes/' + name + '.json', SpriteBuilder)
     game.O = Ontology(True, 'SpriteSheet-32x32/tiny_spritesheet_ontology.csv')
     game.populate_sprite_names(game.O)
-    game.fps = 5  # frames per second
+    game.fps = 15  # frames per second
     game.mainiteration()
     player = game.player
-
-def champ_vision(position, taille_vision, nb_lignes, nb_cols):
-    x, y = position
-    vision = []
-    for i in range(-taille_vision, taille_vision + 1):
-        for j in range(-taille_vision, taille_vision + 1):
-            new_x, new_y = x + i, y + j
-            if 0 <= new_x < nb_lignes and 0 <= new_y < nb_cols:
-                vision.append((new_x, new_y))
-    return vision
 
 def main(nb_jours):
     iterations = 40  # nb de pas max par episode
@@ -94,7 +84,7 @@ def main(nb_jours):
         return [p.get_rowcol() for p in players]
 
     # -------------------------------
-    # Rapport de ce qui est trouve sut la carte
+    # Rapport de ce qui est trouvé sur la carte
     # -------------------------------
     print("lecture carte")
     print("-------------------------------------------")
@@ -149,6 +139,25 @@ def main(nb_jours):
         """
         return len(players_in_resto(r))
 
+    def champ_de_vision(position_joueur, distance_vision, players, coupe_files):
+        """
+        :param position_joueur: position actuelle du joueur
+        :param distance_vision: distance de vision du joueur
+        :param players: liste des joueurs
+        :param coupe_files: liste des coupe-files
+        :return: liste des positions visibles par le joueur (joueurs et coupe-files)
+        """
+        visible_positions = []
+        for player in players:
+            if player.get_rowcol() != position_joueur:
+                if np.linalg.norm(np.array(position_joueur) - np.array(player.get_rowcol())) <= distance_vision:
+                    visible_positions.append(player.get_rowcol())
+        for cf in coupe_files:
+            if np.linalg.norm(np.array(position_joueur) - np.array(cf.get_rowcol())) <= distance_vision:
+                visible_positions.append(cf.get_rowcol())
+        return visible_positions
+
+
     # -------------------------------
     # On place tous les coupe_files du bord au hasard
     # -------------------------------
@@ -176,22 +185,39 @@ def main(nb_jours):
     strategies = []
     choix_initiaux = {}  # Dictionnaire pour stocker les choix initiaux des joueurs
     visited_restaurants = [set() for _ in range(nb_players)]  # Liste des restaurants visités par chaque joueur
-    seuils = []  # Seuil individuel pour chaque joueur
+    distance_vision = 5  # Distance de vision pour chaque joueur
+    temps_restant = [iterations] * nb_players  # Initialisation du temps restant pour chaque joueur
+    seuils = [float('inf')] * nb_players  # Initialisation des seuils pour chaque joueur
+
     for i in range(nb_players):
         print(f"Choisissez la stratégie pour le joueur {i+1}:")
         print("1. Stratégie têtue")
         print("2. Stratégie stochastique")
         print("3. Stratégie greedy")
         choice = int(input("Entrez le numéro de la stratégie : "))
+
         if choice == 1:
             strategies.append(lambda p=i: strategie_tetue(pos_restaurants, p, choix_initiaux))
+
         elif choice == 2:
             probabilites = [1/nb_restos] * nb_restos  # Distribution uniforme par défaut
             strategies.append(lambda p=probabilites: strategie_stochastique(pos_restaurants, p))
+
         elif choice == 3:
             seuil = int(input(f"Entrez le seuil d'occupation pour la stratégie greedy (joueur {i+1}) : "))
-            seuils.append(seuil)
-            strategies.append(lambda p=i: strategie_greedy(pos_restaurants, nb_players_in_resto, seuils[p], players[p].get_rowcol(), visited_restaurants[p], iterations, i))
+            seuils[i] = seuil  # Mettre à jour le seuil pour le joueur actuel
+
+            strategies.append(lambda p=i: strategie_greedy(
+                pos_restaurants,
+                nb_players_in_resto,
+                seuils[p],
+                players[p].get_rowcol(),
+                champ_de_vision(players[p].get_rowcol(), distance_vision, players, coupe_files),
+                temps_restant[p],  # Ajout du temps restant
+                p,
+                nb_players  # Ajout de nb_players
+            ))
+
         else:
             print("Choix invalide. Stratégie aléatoire par défaut.")
             strategies.append(lambda: random.choice(pos_restaurants))
@@ -250,9 +276,9 @@ def main(nb_jours):
                     # Vérifier si le joueur est arrivé à un restaurant
                     if (row, col) in pos_restaurants:
                         r = pos_restaurants.index((row, col))
-                        if nb_players_in_resto(r) - 1 >= seuils[j]:
-                            # Choisir un autre restaurant aléatoire
-                            new_target = strategie_greedy(pos_restaurants, nb_players_in_resto, seuils[j], players[j].get_rowcol(), visited_restaurants[j], iterations, i)
+                        if nb_players_in_resto(r) >= seuils[j]:
+                            # Choisir un autre restaurant
+                            new_target = strategie_greedy(pos_restaurants, nb_players_in_resto, seuils[j], players[j].get_rowcol(), champ_de_vision(players[j].get_rowcol(), distance_vision, players, coupe_files), temps_restant[j], j, nb_players)
                             pos_player = (row, col)
                             prob = ProblemeGrid2D(pos_player, new_target, g, 'manhattan')
                             path[j] = probleme.astar(prob, verbose=False)
