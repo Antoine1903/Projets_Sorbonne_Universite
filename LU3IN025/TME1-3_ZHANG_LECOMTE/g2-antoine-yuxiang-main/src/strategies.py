@@ -1,4 +1,5 @@
 import random
+from search.grid2D import *
 
 def strategie_tetue(pos_restaurants, joueur_id, choix_initiaux):
     """Stratégie têtue : le joueur va toujours au même restaurant qu'il a choisi au premier jour."""
@@ -35,9 +36,7 @@ def strategie_greedy(pos_restaurants, nb_players_in_resto, seuil, position_joueu
     for resto in preferences:
         if resto in pos_restaurants:
             nb_joueurs = nb_players_in_resto(pos_restaurants.index(resto))
-            distance = abs(position_joueur[0] - resto[0]) + abs(position_joueur[1] - resto[1])
-
-            print(f"Joueur {joueur_id} : Restaurant {resto} - Joueurs = {nb_joueurs}, Distance = {distance}, Seuil = {seuil}, Temps restant = {temps_restant}")
+            distance = distManhattan(position_joueur, resto)
 
             # Vérification du seuil et du temps restant
             if nb_joueurs < seuil and distance <= temps_restant:
@@ -51,7 +50,7 @@ def strategie_greedy(pos_restaurants, nb_players_in_resto, seuil, position_joueu
     for resto in champ_de_vision:
         if resto in pos_restaurants:
             nb_joueurs = nb_players_in_resto(pos_restaurants.index(resto))
-            distance = abs(position_joueur[0] - resto[0]) + abs(position_joueur[1] - resto[1])
+            distance = distManhattan(position_joueur, resto)
 
             print(f"Joueur {joueur_id} : Restaurant visible {resto} - Joueurs = {nb_joueurs}, Distance = {distance}")
 
@@ -67,4 +66,4 @@ def strategie_greedy(pos_restaurants, nb_players_in_resto, seuil, position_joueu
 
     # Si aucun bon choix trouvé (peu probable), choisir au hasard parmi les accessibles en temps_restant
     possibles = [r for r in champ_de_vision if abs(position_joueur[0] - r[0]) + abs(position_joueur[1] - r[1]) <= temps_restant]
-    return best_choice if best_choice else (random.choice(possibles) if possibles else None)
+    return best_choice if best_choice else (random.choice(possibles) if possibles else random.choice(pos_restaurants))

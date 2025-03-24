@@ -35,7 +35,7 @@ def init(_boardname=None):
     game = Game('Cartes/' + name + '.json', SpriteBuilder)
     game.O = Ontology(True, 'SpriteSheet-32x32/tiny_spritesheet_ontology.csv')
     game.populate_sprite_names(game.O)
-    game.fps = 15  # frames per second
+    game.fps = 5  # frames per second
     game.mainiteration()
     player = game.player
 
@@ -157,7 +157,7 @@ def main(nb_jours):
                 visible_positions.append(cf.get_rowcol())
         return visible_positions
 
-    # -------------------------------
+    # ----------------- pos_player = (x_init, y_init[p])--------------
     # On place tous les coupe_files du bord au hasard
     # -------------------------------
 
@@ -258,8 +258,7 @@ def main(nb_jours):
             g[i][nb_lignes - 2] = False
 
         for p in range(nb_players):
-            pos_player = (x_init, y_init[p])
-            prob = ProblemeGrid2D(pos_player, choix_resto[p], g, 'manhattan')
+            prob = ProblemeGrid2D(players[p].get_rowcol(), choix_resto[p], g, 'manhattan')
             path.append(probleme.astar(prob, verbose=False))
 
         # Réinitialiser les coupe-files ramassés
@@ -294,8 +293,7 @@ def main(nb_jours):
                                     nb_players
                                 )
                                 if new_target:
-                                    pos_player = players[j].get_rowcol()
-                                    prob = ProblemeGrid2D(pos_player, new_target, g, 'manhattan')
+                                    prob = ProblemeGrid2D(players[j].get_rowcol(), new_target, g, 'manhattan')
                                     path[j] = probleme.astar(prob, verbose=False)
 
                 for cf in coupe_files:
