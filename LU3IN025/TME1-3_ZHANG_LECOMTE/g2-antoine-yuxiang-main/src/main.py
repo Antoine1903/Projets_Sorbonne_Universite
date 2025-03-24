@@ -157,7 +157,6 @@ def main(nb_jours):
                 visible_positions.append(cf.get_rowcol())
         return visible_positions
 
-
     # -------------------------------
     # On place tous les coupe_files du bord au hasard
     # -------------------------------
@@ -266,6 +265,9 @@ def main(nb_jours):
         # Réinitialiser les coupe-files ramassés
         player_coupe_file = [False] * nb_players
 
+        # Réinitialiser le temps restant pour chaque joueur
+        temps_restant = [iterations] * nb_players
+
         # Boucle principale de déplacements
         for i in range(iterations):
             for j in range(nb_players):
@@ -276,12 +278,25 @@ def main(nb_jours):
                     # Vérifier si le joueur est arrivé à un restaurant
                     if (row, col) in pos_restaurants:
                         r = pos_restaurants.index((row, col))
-                        if nb_players_in_resto(r) >= seuils[j]:
-                            # Choisir un autre restaurant
-                            new_target = strategie_greedy(pos_restaurants, nb_players_in_resto, seuils[j], players[j].get_rowcol(), champ_de_vision(players[j].get_rowcol(), distance_vision, players, coupe_files), temps_restant[j], j, nb_players)
-                            pos_player = (row, col)
-                            prob = ProblemeGrid2D(pos_player, new_target, g, 'manhattan')
-                            path[j] = probleme.astar(prob, verbose=False)
+                        
+                        # Vérifier que le joueur utilise la stratégie_greedy et que le seuil est dépassé
+                        if strategies[j].__name__ == "strategie_greedy" and seuils[j] is not None:
+                            if nb_players_in_resto(r) >= seuils[j]:    
+                                # Choisir un autre restaurant
+                                new_target = strategie_greedy(
+                                    pos_restaurants,
+                                    nb_players_in_resto,
+                                    seuils[j],
+                                    players[j].get_rowcol(),
+                                    champ_de_vision(players[j].get_rowcol(), distance_vision, players, coupe_files),
+                                    temps_restant[j],
+                                    j,
+                                    nb_players
+                                )
+                                if new_target:
+                                    pos_player = players[j].get_rowcol()
+                                    prob = ProblemeGrid2D(pos_player, new_target, g, 'manhattan')
+                                    path[j] = probleme.astar(prob, verbose=False)
 
                 for cf in coupe_files:
                     if (row, col) == cf.get_rowcol() and not player_coupe_file[j]:
@@ -290,6 +305,10 @@ def main(nb_jours):
                         coupe_files.remove(cf)
                         print(f"Joueur {j} a ramassé le Coupe-file!")
                         break
+
+            # Mettre à jour le temps restant pour chaque joueur
+            for j in range(nb_players):
+                temps_restant[j] -= 1
 
             game.mainiteration()
 
