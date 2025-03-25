@@ -182,11 +182,12 @@ def main(nb_jours):
     # Menu de sélection des stratégies
     # -------------------------------
 
+    choix_resto = [None] * nb_players
     strategies = []
-    strategy_names = []  # 新增：记录策略名称
+    strategy_names = []  # enregistre les noms des stratégies
     choix_initiaux = {}  
     visited_restaurants = [set() for _ in range(nb_players)]  
-    distance_vision = 5
+    distance_vision = 25
     temps_restant = [iterations] * nb_players  
     seuils = [float('inf')] * nb_players  
     historique = {}  
@@ -199,11 +200,12 @@ def main(nb_jours):
         print("3. Stratégie greedy")
         print("4. Fictitious Play")
         print("5. Regret Matching")
+        print("6. Stratégie greedy complexe")
         choice = int(input("Entrez le numéro de la stratégie : "))
 
         if choice == 1:
             strategies.append(lambda p=i: strategie_tetue(pos_restaurants, p, choix_initiaux))
-            strategy_names.append("Têtue")  # 记录策略名称
+            strategy_names.append("Têtue")
         elif choice == 2:
             probabilites = [1/nb_restos] * nb_restos  
             strategies.append(lambda p=probabilites: strategie_stochastique(pos_restaurants, p))
@@ -228,6 +230,21 @@ def main(nb_jours):
         elif choice == 5:
             strategies.append(lambda p=i: regret_matching(pos_restaurants, historique, p, payoffs))
             strategy_names.append("Regret Matching")
+        elif choice == 6:
+            seuil = int(input(f"Entrez le seuil pour greedy (joueur {i+1}) : "))
+            seuils[i] = seuil
+            strategies.append(lambda p=i: strategie_greedy_complex(
+                pos_restaurants,
+                nb_players_in_resto,
+                seuils[p],
+                players[p].get_rowcol(),
+                champ_de_vision(players[p].get_rowcol(), distance_vision, players, coupe_files),
+                temps_restant[p],
+                p,
+                nb_players,
+                choix_resto  # Passez choix_resto ici
+            ))
+            strategy_names.append("Greedy Complexe")
         else:
             print("Stratégie aléatoire par défaut.")
             strategies.append(lambda: random.choice(pos_restaurants))
@@ -271,7 +288,10 @@ def main(nb_jours):
             g[i][nb_lignes - 1] = False
             g[i][nb_lignes - 2] = False
 
+        # Mettre à jour les choix des joueurs
         for p in range(nb_players):
+            if choix_resto[p] is None:
+                choix_resto[p] = random.choice(pos_restaurants)
             prob = ProblemeGrid2D(players[p].get_rowcol(), choix_resto[p], g, 'manhattan')
             path.append(probleme.astar(prob, verbose=False))
 
@@ -322,10 +342,38 @@ def main(nb_jours):
                                     prob = ProblemeGrid2D(players[j].get_rowcol(), choix_resto[j], g, 'manhattan')
                                     path[j] = probleme.astar(prob, verbose=False)  # Recalcule le chemin
 
-                                # Déplacer le joueur sur le chemin mis à jour
-                                if i < len(path[j]):
-                                    (row, col) = path[j][i]
-                                    players[j].set_rowcol(row, col)
+                                    # Déplacer le joueur sur le chemin mis à jour
+                                    if i < len(path[j]):
+                                        (row, col) = path[j][i]
+                                        players[j].set_rowcol(row, col)
+
+                         # Vérifier que le joueur utilise la stratégie_greedy et que le seuil est dépassé
+                        elif strategies[j].__name__ == "strategie_greedy_complex" and seuils[j] is not None:
+                            # Réévaluation dynamique
+                            if nb_players_in_resto(r) >= seuils[j]:
+                                print(f"⚠️ Trop de joueurs dans le restaurant {r}. Recherche d'un autre restaurant...")
+                                new_target = strategie_greedy_complex(
+                                    pos_restaurants,
+                                    nb_players_in_resto,
+                                    seuils[j],
+                                    players[j].get_rowcol(),
+                                    champ_de_vision(players[j].get_rowcol(), distance_vision, players, coupe_files),
+                                    temps_restant[j],
+                                    j,
+                                    nb_players,
+                                    choix_resto # Passez choix_resto ici
+                                )
+
+                                if new_target and new_target != choix_resto[j]:  # Si un nouveau choix est fait
+                                    print(f"🔄 Joueur {j} change de restaurant: {choix_resto[j]} ➝ {new_target}")
+                                    choix_resto[j] = new_target
+                                    prob = ProblemeGrid2D(players[j].get_rowcol(), choix_resto[j], g, 'manhattan')
+                                    path[j] = probleme.astar(prob, verbose=False)  # Recalcule le chemin
+
+                                    # Déplacer le joueur sur le chemin mis à jour
+                                    if i < len(path[j]):
+                                        (row, col) = path[j][i]
+                                        players[j].set_rowcol(row, col)
 
                 # Vérifier si le joueur ramasse un "Coupe-file"
                 for cf in coupe_files:
