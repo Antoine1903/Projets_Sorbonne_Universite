@@ -13,13 +13,11 @@ def strategie_stochastique(pos_restaurants, probabilites):
     return random.choices(pos_restaurants, weights=probabilites, k=1)[0]
 
 def strategie_greedy(pos_restaurants, nb_players_in_resto, seuil, position_joueur, champ_de_vision, temps_restant, joueur_id, nb_players):
-    """
-    Stratégie greedy avec tests :
-    - Les joueurs ont une liste de préférences de restaurants.
+    """- Les joueurs ont une liste de préférences de restaurants basée sur la distance.
     - Lorsqu'un joueur entre dans un restaurant, ceux qui le voient recalculent leur décision.
-    - Si le seuil est atteint, le joueur cherche un autre restaurant de sa liste.
-    - Si tous les restaurants visibles dépassent son seuil, il va au plus proche avec le moins de joueurs.
-    - Si le temps manque pour changer, il reste dans le restaurant atteint.
+    - Si le seuil de joueurs dans le restaurant actuel est atteint, le joueur cherche un autre restaurant visible dans son champ de vision.
+    - Si tous les restaurants visibles dépassent le seuil, le joueur se dirige vers le restaurant le plus proche avec le moins de joueurs.
+    - Si le temps restant est insuffisant pour changer de restaurant, le joueur reste dans le restaurant atteint.
     """
 
     # Initialiser les préférences pour chaque joueur en fonction de la distance
@@ -119,12 +117,18 @@ def regret_matching(pos_restaurants, historique, joueur_id, payoffs):
 
 def strategie_greedy_complex(pos_restaurants, nb_players_in_resto, seuil, position_joueur, champ_de_vision, temps_restant, joueur_id, nb_players, choix_resto):
     """
-    Stratégie greedy avec tests :
-    - Les joueurs ont une liste de préférences de restaurants.
+    Stratégie greedy complexe :
+    - Les joueurs ont une liste de préférences de restaurants basée sur la distance.
     - Lorsqu'un joueur entre dans un restaurant, ceux qui le voient recalculent leur décision.
-    - Si le seuil est atteint, le joueur cherche un autre restaurant de sa liste.
-    - Si tous les restaurants visibles dépassent son seuil, il va au plus proche avec le moins de joueurs.
-    - Si le temps manque pour changer, il reste dans le restaurant atteint.
+    - Si le seuil de joueurs dans le restaurant actuel est atteint, le joueur cherche un autre restaurant visible dans son champ de vision.
+    - Si tous les restaurants visibles dépassent le seuil, le joueur se dirige vers le restaurant le plus proche avec le moins de joueurs.
+    - Si le temps restant est insuffisant pour changer de restaurant, le joueur reste dans le restaurant atteint.
+
+    Différences avec la stratégie greedy :
+    - **Réévaluation dynamique** : Contrairement à la stratégie greedy de base, cette version permet aux joueurs de réévaluer leur choix en cours de jeu.
+    - **Champ de vision** : Les joueurs prennent en compte les restaurants visibles pour ajuster leur décision.
+    - **Flexibilité** : Les joueurs peuvent changer de restaurant même après avoir fait un choix initial, s'ils trouvent une meilleure option.
+    - **Gestion du temps restant** : La stratégie vérifie constamment le temps restant pour atteindre les restaurants potentiels, permettant des ajustements en temps réel.
     """
 
     # Initialiser les préférences pour chaque joueur en fonction de la distance
@@ -135,24 +139,31 @@ def strategie_greedy_complex(pos_restaurants, nb_players_in_resto, seuil, positi
 
     print(f"🔍 Joueur {joueur_id} explore le champ de vision : {champ_de_vision}")
 
-    for resto in prefs_restaurants:
-        if resto in champ_de_vision:
-            nb_joueurs = nb_players_in_resto(pos_restaurants.index(resto))
-            distance = distManhattan(position_joueur, resto)
+    # Vérifier si le joueur est déjà dans un restaurant
+    if position_joueur in pos_restaurants:
+        current_resto_index = pos_restaurants.index(position_joueur)
+        current_nb_joueurs = nb_players_in_resto(current_resto_index)
 
-            print(f"  🔎 Restaurant visible {resto} → Joueurs : {nb_joueurs}, Distance : {distance}")
+        # Si le restaurant actuel dépasse le seuil, envisager de changer
+        if current_nb_joueurs >= seuil:
+            print(f"⚠️ Joueur {joueur_id} réévalue sa décision car le restaurant actuel a trop de joueurs.")
+            for resto in prefs_restaurants:
+                if resto in champ_de_vision and resto != position_joueur:
+                    nb_joueurs = nb_players_in_resto(pos_restaurants.index(resto))
+                    distance = distManhattan(position_joueur, resto)
 
-            # Vérification du seuil et du temps restant
-            if nb_joueurs < seuil and distance <= temps_restant:
-                print(f"✅ Joueur {joueur_id} choisit {resto} (Meilleur choix visible)")
-                choix_resto[joueur_id] = resto
-                return
+                    print(f"  🔎 Restaurant visible {resto} → Joueurs : {nb_joueurs}, Distance : {distance}")
 
-    # Trouver le restaurant le plus proche (le joueur ne voit pas les restaurants)
+                    # Vérification du seuil et du temps restant
+                    if nb_joueurs < seuil and distance <= temps_restant:
+                        print(f"✅ Joueur {joueur_id} change pour {resto} (Meilleur choix visible)")
+                        choix_resto[joueur_id] = resto
+                        return
+
+    # Si le joueur n'est pas dans un restaurant ou s'il n'y a pas de meilleure option visible, trouver le meilleur choix
     best_choice = None
     best_score = (float('inf'), float('inf'))  # Priorité : (nb_joueurs, distance)
 
-    # Parcourir les préférences
     for resto in prefs_restaurants:
         nb_joueurs = nb_players_in_resto(pos_restaurants.index(resto))
         distance = distManhattan(position_joueur, resto)
