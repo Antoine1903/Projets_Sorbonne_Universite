@@ -22,10 +22,6 @@ def strategie_greedy(pos_restaurants, nb_players_in_resto, seuil, position_joueu
     - Si le temps manque pour changer, il reste dans le restaurant atteint.
     """
 
-    # Trouver le restaurant visible le plus proche avec le moins de joueurs
-    best_choice = None
-    best_score = (float('inf'), float('inf'))  # Priorité : (nb_joueurs, distance)
-
     # Initialiser les préférences pour chaque joueur en fonction de la distance
     prefs_restaurants = sorted(pos_restaurants, key=lambda resto: distManhattan(position_joueur, resto))
 
@@ -41,19 +37,15 @@ def strategie_greedy(pos_restaurants, nb_players_in_resto, seuil, position_joueu
 
             print(f"  🔎 Restaurant visible {resto} → Joueurs : {nb_joueurs}, Distance : {distance}")
 
-            # Vérifier que le joueur a assez de temps pour y aller
-            if distance > temps_restant:
-                print(f"    ⏳ {resto} est trop loin ! (Distance : {distance}, Temps restant : {temps_restant})")
-                continue
+            # Vérification du seuil et du temps restant
+            if nb_joueurs < seuil and distance <= temps_restant:
+                print(f"✅ Joueur {joueur_id} choisit {resto} (Meilleur choix visible)")
+                return resto
 
-            score = (nb_joueurs, distance)  # Priorité : moins de joueurs, puis distance
-            if score < best_score:
-                best_score = score
-                best_choice = resto
 
-    if best_choice:
-        print(f"✅ Joueur {joueur_id} choisit {best_choice} (Meilleur choix visible)")
-        return best_choice
+    # Trouver le restaurant le plus proche (le joueur ne voit pas les restaurants)
+    best_choice = None
+    best_score = (float('inf'), float('inf'))  # Priorité : (nb_joueurs, distance)
 
     # Parcourir les préférences
     for resto in prefs_restaurants:
@@ -62,10 +54,18 @@ def strategie_greedy(pos_restaurants, nb_players_in_resto, seuil, position_joueu
 
         print(f"  📍 Test resto {resto} → Joueurs : {nb_joueurs}, Distance : {distance}")
 
-        # Vérification du seuil et du temps restant
-        if nb_joueurs < seuil and distance <= temps_restant:
+        # Vérification du temps restant
+        if distance <= temps_restant:
             print(f"✅ Joueur {joueur_id} choisit {resto} (Seuil OK, Temps OK)")
             return resto
+        else:
+            print(f"    ⏳ {resto} est trop loin ! (Distance : {distance}, Temps restant : {temps_restant})")
+            continue
+
+        score = (nb_joueurs, distance)  # Priorité : moins de joueurs, puis distance
+        if score < best_score:
+            best_score = score
+            best_choice = resto
 
     # Si aucun bon choix trouvé, choisir au hasard parmi les accessibles en temps restant
     possibles = [r for r in prefs_restaurants if distManhattan(position_joueur, r) <= temps_restant]
