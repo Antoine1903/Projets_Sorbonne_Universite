@@ -36,12 +36,16 @@ def init(_boardname=None):
     game = Game('Cartes/' + name + '.json', SpriteBuilder)
     game.O = Ontology(True, 'SpriteSheet-32x32/tiny_spritesheet_ontology.csv')
     game.populate_sprite_names(game.O)
+    #game.fps = 5  # frames per second
     game.mainiteration()
     player = game.player
 
 def main(nb_jours):
     iterations = 40  # nb de pas max par episode
-    print("Iterations:", iterations)
+    if len(sys.argv) == 2:
+        iterations = int(sys.argv[1])
+    print("Iterations: ")
+    print(iterations)
 
     init('restaurant-map')
 
@@ -91,6 +95,14 @@ def main(nb_jours):
     print("colonnes:", nb_cols)
     print("coup_files:", nb_coupe_files)
     print("-------------------------------------------")
+
+    # -------------------------------
+    # Carte demo
+    # 8 joueurs
+    # 5 restos
+    # -------------------------------
+
+    # -------------------------------
 
     # -------------------------------
     # Fonctions definissant les positions legales et placement aléatoire
@@ -146,7 +158,7 @@ def main(nb_jours):
                 visible_positions.append(cf.get_rowcol())
         return visible_positions
 
-    # ----------------- pos_player = (x_init, y_init[p])--------------
+    # -------------------------------
     # On place tous les coupe_files du bord au hasard
     # -------------------------------
 
