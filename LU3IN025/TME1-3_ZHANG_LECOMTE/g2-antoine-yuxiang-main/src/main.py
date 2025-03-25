@@ -22,6 +22,7 @@ from search.grid2D import ProblemeGrid2D
 from search import probleme
 
 from strategies import *
+import matplotlib.pyplot as plt
 
 # ---- ---- ---- ---- ---- ----
 # ---- Main                ----
@@ -40,11 +41,9 @@ def init(_boardname=None):
 
 def main(nb_jours):
     iterations = 40  # nb de pas max par episode
-    if len(sys.argv) == 2:
-        iterations = int(sys.argv[1])
     print("Iterations:", iterations)
 
-    init()
+    init('restaurant-map')
 
     # -------------------------------
     # Initialisation
@@ -172,13 +171,14 @@ def main(nb_jours):
     # -------------------------------
 
     strategies = []
-    choix_initiaux = {}  # Dictionnaire pour stocker les choix initiaux des joueurs
-    visited_restaurants = [set() for _ in range(nb_players)]  # Liste des restaurants visités par chaque joueur
-    distance_vision = 5  # Distance de vision pour chaque joueur
-    temps_restant = [iterations] * nb_players  # Initialisation du temps restant pour chaque joueur
-    seuils = [float('inf')] * nb_players  # Initialisation des seuils pour chaque joueur
-    historique = {}  # Dictionnaire pour stocker l'historique des visites des joueurs
-    payoffs = {}  # Dictionnaire pour stocker les gains des joueurs
+    strategy_names = []  # 新增：记录策略名称
+    choix_initiaux = {}  
+    visited_restaurants = [set() for _ in range(nb_players)]  
+    distance_vision = 5  
+    temps_restant = [iterations] * nb_players  
+    seuils = [float('inf')] * nb_players  
+    historique = {}  
+    payoffs = {}  
 
     for i in range(nb_players):
         print(f"Choisissez la stratégie pour le joueur {i+1}:")
@@ -191,35 +191,35 @@ def main(nb_jours):
 
         if choice == 1:
             strategies.append(lambda p=i: strategie_tetue(pos_restaurants, p, choix_initiaux))
-
+            strategy_names.append("Têtue")  # 记录策略名称
         elif choice == 2:
-            probabilites = [1/nb_restos] * nb_restos  # Distribution uniforme par défaut
+            probabilites = [1/nb_restos] * nb_restos  
             strategies.append(lambda p=probabilites: strategie_stochastique(pos_restaurants, p))
-
+            strategy_names.append("Stochastique")
         elif choice == 3:
-            seuil = int(input(f"Entrez le seuil d'occupation pour la stratégie greedy (joueur {i+1}) : "))
-            seuils[i] = seuil  # Mettre à jour le seuil pour le joueur actuel
-
+            seuil = int(input(f"Entrez le seuil pour greedy (joueur {i+1}) : "))
+            seuils[i] = seuil  
             strategies.append(lambda p=i: strategie_greedy(
                 pos_restaurants,
                 nb_players_in_resto,
                 seuils[p],
                 players[p].get_rowcol(),
                 champ_de_vision(players[p].get_rowcol(), distance_vision, players, coupe_files),
-                temps_restant[p],  # Ajout du temps restant
+                temps_restant[p], 
                 p,
-                nb_players  # Ajout de nb_players
+                nb_players  
             ))
-
+            strategy_names.append("Greedy")
         elif choice == 4:
             strategies.append(lambda p=i: fictitious_play(pos_restaurants, historique, p))
-
+            strategy_names.append("Fictitious Play")
         elif choice == 5:
             strategies.append(lambda p=i: regret_matching(pos_restaurants, historique, p, payoffs))
-
+            strategy_names.append("Regret Matching")
         else:
-            print("Choix invalide. Stratégie aléatoire par défaut.")
+            print("Stratégie aléatoire par défaut.")
             strategies.append(lambda: random.choice(pos_restaurants))
+            strategy_names.append("Aléatoire")
 
     # -------------------------------
     # Boucle principale sur les jours
@@ -364,7 +364,62 @@ def main(nb_jours):
             payoffs[p][choix_resto[p]] += scores[p]
 
     print("Scores totaux après 5 jours :", total_scores)
+    # 生成比较图表（修改后的统计逻辑）
+    strategy_total = {}  # 记录策略总分
+    strategy_count = {}  # 记录使用人数
+    
+    # 遍历所有玩家统计数据
+    for p in range(nb_players):
+        strategy = strategy_names[p]
+        if strategy not in strategy_total:
+            strategy_total[strategy] = 0
+            strategy_count[strategy] = 0
+        strategy_total[strategy] += total_scores[p]
+        strategy_count[strategy] += 1
+    
+    # 计算平均分数（处理除零错误）
+    average_scores = {}
+    for strategy in strategy_total:
+        if strategy_count[strategy] > 0:
+            average_scores[strategy] = strategy_total[strategy] / strategy_count[strategy]
+        else:
+            average_scores[strategy] = 0
+    
+    # 准备可视化数据
+    labels = []
+    values = []
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b']
+    color_idx = 0
+    
+    # 按策略名称排序保证颜色一致性
+    for strategy in sorted(average_scores.keys()):
+        labels.append(f"{strategy}\n(n={strategy_count[strategy]})")  # 显示使用人数
+        values.append(average_scores[strategy])
+        color_idx += 1
+    
+    # 创建图表
+    plt.figure(figsize=(12, 7))
+    bars = plt.bar(labels, values, color=colors[:len(labels)])
+    
+    # 添加数值标签
+    for bar in bars:
+        height = bar.get_height()
+        plt.text(bar.get_x() + bar.get_width()/2., height,
+                 f'{height:.2f}',
+                 ha='center', va='bottom')
+    
+    # 图表装饰
+    plt.xlabel('Stratégies (avec nombre de joueurs)')
+    plt.ylabel('Score Moyen par Joueur')
+    plt.title(f'Performance Comparative des Stratégies sur {nb_jours} Jours (Moyenne par Joueur)')
+    plt.xticks(rotation=15)
+    plt.grid(axis='y', linestyle='--', alpha=0.7)
+    plt.tight_layout()
+    
+    # 保存并显示
+    plt.savefig('strategy_comparison.png', dpi=300)
+    plt.show()
     pygame.quit()
 
 if __name__ == '__main__':
-    main(nb_jours=5)
+    main(nb_jours=50)
