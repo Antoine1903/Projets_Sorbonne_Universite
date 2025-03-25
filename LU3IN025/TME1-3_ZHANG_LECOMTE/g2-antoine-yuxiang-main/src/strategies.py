@@ -21,7 +21,7 @@ def strategie_greedy(pos_restaurants, nb_players_in_resto, seuil, position_joueu
     - Si tous les restaurants visibles dépassent son seuil, il va au plus proche avec le moins de joueurs.
     - Si le temps manque pour changer, il reste dans le restaurant atteint.
     """
-    
+
     # Initialiser les préférences pour chaque joueur
     prefs_restaurants = [pos_restaurants.copy() for _ in range(nb_players)]
     for prefs in prefs_restaurants:
