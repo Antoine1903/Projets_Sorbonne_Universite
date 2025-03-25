@@ -35,7 +35,7 @@ def init(_boardname=None):
     game = Game('Cartes/' + name + '.json', SpriteBuilder)
     game.O = Ontology(True, 'SpriteSheet-32x32/tiny_spritesheet_ontology.csv')
     game.populate_sprite_names(game.O)
-    game.fps = 5  # frames per second
+    #game.fps = 5  # frames per second
     game.mainiteration()
     player = game.player
 
@@ -187,12 +187,16 @@ def main(nb_jours):
     distance_vision = 5  # Distance de vision pour chaque joueur
     temps_restant = [iterations] * nb_players  # Initialisation du temps restant pour chaque joueur
     seuils = [float('inf')] * nb_players  # Initialisation des seuils pour chaque joueur
+    historique = {}  # Dictionnaire pour stocker l'historique des visites des joueurs
+    payoffs = {}  # Dictionnaire pour stocker les gains des joueurs
 
     for i in range(nb_players):
         print(f"Choisissez la stratégie pour le joueur {i+1}:")
         print("1. Stratégie têtue")
         print("2. Stratégie stochastique")
         print("3. Stratégie greedy")
+        print("4. Fictitious Play")
+        print("5. Regret Matching")
         choice = int(input("Entrez le numéro de la stratégie : "))
 
         if choice == 1:
@@ -217,6 +221,12 @@ def main(nb_jours):
                 nb_players  # Ajout de nb_players
             ))
 
+        elif choice == 4:
+            strategies.append(lambda p=i: fictitious_play(pos_restaurants, historique, p))
+
+        elif choice == 5:
+            strategies.append(lambda p=i: regret_matching(pos_restaurants, historique, p, payoffs))
+
         else:
             print("Choix invalide. Stratégie aléatoire par défaut.")
             strategies.append(lambda: random.choice(pos_restaurants))
@@ -229,6 +239,8 @@ def main(nb_jours):
     initial_coupe_files = [o for o in game.layers["ramassable"]]  # Sauvegarder les objets "coupe-file" initiaux
     for day in range(nb_jours):
         print(f"\nJour {day+1}:")
+        # Réinitialiser le temps restant pour chaque joueur
+        temps_restant = [iterations] * nb_players
 
         # Réinitialiser les positions des joueurs et des coupe-files
         coupe_files = initial_coupe_files.copy()
@@ -264,23 +276,32 @@ def main(nb_jours):
         # Réinitialiser les coupe-files ramassés
         player_coupe_file = [False] * nb_players
 
-        # Réinitialiser le temps restant pour chaque joueur
-        temps_restant = [iterations] * nb_players
-
         # Boucle principale de déplacements
         for i in range(iterations):
+            print(f"\n--- ITERATION {i+1}/{iterations} ---")
+
             for j in range(nb_players):
                 if i < len(path[j]):
                     (row, col) = path[j][i]
                     players[j].set_rowcol(row, col)
 
+                    # Affichage des informations du joueur
+                    print(f"Joueur {j} | Position: ({row}, {col}) | Temps restant: {temps_restant[j]} | Destination: {choix_resto[j]}")
+
+                    # Vérification du temps restant
+                    if temps_restant[j] <= 0:
+                        print(f"⚠️ ALERTE: Le temps du joueur {j} est écoulé !")
+
                     # Vérifier si le joueur est arrivé à un restaurant
                     if (row, col) in pos_restaurants:
                         r = pos_restaurants.index((row, col))
-                        
+                        print(f"🍽️ Joueur {j} est arrivé au restaurant {r}")
+
                         # Vérifier que le joueur utilise la stratégie_greedy et que le seuil est dépassé
                         if strategies[j].__name__ == "strategie_greedy" and seuils[j] is not None:
-                            if nb_players_in_resto(r) >= seuils[j]:    
+                            if nb_players_in_resto(r) >= seuils[j]:
+                                print(f"⚠️ Trop de joueurs dans le restaurant {r}. Recherche d'un autre restaurant...")
+
                                 # Choisir un autre restaurant
                                 new_target = strategie_greedy(
                                     pos_restaurants,
@@ -292,23 +313,35 @@ def main(nb_jours):
                                     j,
                                     nb_players
                                 )
-                                if new_target:
-                                    prob = ProblemeGrid2D(players[j].get_rowcol(), new_target, g, 'manhattan')
-                                    path[j] = probleme.astar(prob, verbose=False)
 
+                                if new_target and new_target != choix_resto[j]:  # Si un nouveau choix est fait
+                                    print(f"🔄 Joueur {j} change de restaurant: {choix_resto[j]} ➝ {new_target}")
+                                    choix_resto[j] = new_target
+                                    prob = ProblemeGrid2D(players[j].get_rowcol(), choix_resto[j], g, 'manhattan')
+                                    path[j] = probleme.astar(prob, verbose=False)  # Recalcule le chemin
+
+                                # Déplacer le joueur sur le chemin mis à jour
+                                if i < len(path[j]):
+                                    (row, col) = path[j][i]
+                                    players[j].set_rowcol(row, col)
+
+                # Vérifier si le joueur ramasse un "Coupe-file"
                 for cf in coupe_files:
                     if (row, col) == cf.get_rowcol() and not player_coupe_file[j]:
                         player_coupe_file[j] = True
                         game.layers["ramassable"].remove(cf)
                         coupe_files.remove(cf)
-                        print(f"Joueur {j} a ramassé le Coupe-file!")
+                        print(f"🎟️ Joueur {j} a ramassé un Coupe-file!")
                         break
 
             # Mettre à jour le temps restant pour chaque joueur
             for j in range(nb_players):
                 temps_restant[j] -= 1
+                if temps_restant[j] < 0:
+                    print(f"⏳ Joueur {j} n'a plus de temps restant !")
 
             game.mainiteration()
+            print("-" * 40)  # Séparation entre les itérations
 
         # Calcul des scores quotidiens
         attendance = [0] * nb_restos
@@ -331,6 +364,14 @@ def main(nb_jours):
         print("Scores quotidiens :", scores)
         for p in range(nb_players):
             total_scores[p] += scores[p]
+
+        # Mettre à jour l'historique et les gains pour les stratégies Fictitious Play et Regret Matching
+        for p in range(nb_players):
+            historique.setdefault(p, {}).setdefault(choix_resto[p], 0)
+            historique[p][choix_resto[p]] += 1
+
+            payoffs.setdefault(p, {}).setdefault(choix_resto[p], 0)
+            payoffs[p][choix_resto[p]] += scores[p]
 
     print("Scores totaux après 5 jours :", total_scores)
     pygame.quit()
