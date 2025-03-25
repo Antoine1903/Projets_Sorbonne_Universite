@@ -36,7 +36,7 @@ def init(_boardname=None):
     game = Game('Cartes/' + name + '.json', SpriteBuilder)
     game.O = Ontology(True, 'SpriteSheet-32x32/tiny_spritesheet_ontology.csv')
     game.populate_sprite_names(game.O)
-    #game.fps = 5  # frames per second
+    game.fps = 5  # frames per second
     game.mainiteration()
     player = game.player
 
@@ -186,7 +186,7 @@ def main(nb_jours):
     strategy_names = []  # 新增：记录策略名称
     choix_initiaux = {}  
     visited_restaurants = [set() for _ in range(nb_players)]  
-    distance_vision = 5  
+    distance_vision = 5
     temps_restant = [iterations] * nb_players  
     seuils = [float('inf')] * nb_players  
     historique = {}  
