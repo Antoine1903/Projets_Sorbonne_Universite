@@ -146,7 +146,7 @@ def main(nb_jours):
                 visible_positions.append(cf.get_rowcol())
         return visible_positions
 
-    # ----------------- pos_player = (x_init, y_init[p])--------------
+    # -------------------------------
     # On place tous les coupe_files du bord au hasard
     # -------------------------------
 
@@ -172,15 +172,16 @@ def main(nb_jours):
 
     strategies = []
     strategy_names = []  # 新增：记录策略名称
-    choix_initiaux = {}  
-    visited_restaurants = [set() for _ in range(nb_players)]  
-    distance_vision = 5  
-    temps_restant = [iterations] * nb_players  
-    seuils = [float('inf')] * nb_players  
-    historique = {}  
-    payoffs = {}  
+    choix_initiaux = {}
+    visited_restaurants = [set() for _ in range(nb_players)]
+    distance_vision = 5
+    temps_restant = [iterations] * nb_players
+    seuils = [float('inf')] * nb_players
+    historique = {}
+    payoffs = {}
+    historique_scores = {j: 0 for j in range(nb_players)}
+    historique_choix = {j: random.choice(pos_restaurants) for j in range(nb_players)}
 
-    # 在策略选择菜单中添加模仿策略选项
     for i in range(nb_players):
         print(f"Choisissez la stratégie pour le joueur {i+1}:")
         print("1. Stratégie têtue")
@@ -188,28 +189,29 @@ def main(nb_jours):
         print("3. Stratégie greedy")
         print("4. Fictitious Play")
         print("5. Regret Matching")
-        print("6. Stratégie Imitation")  # 新增选项
+        print("6. Stratégie Imitation")
+        print("7. Stratégie Séquence Fixe")
         choice = int(input("Entrez le numéro de la stratégie : "))
 
         if choice == 1:
             strategies.append(lambda p=i: strategie_tetue(pos_restaurants, p, choix_initiaux))
             strategy_names.append("Têtue")
         elif choice == 2:
-            probabilites = [1/nb_restos] * nb_restos  
+            probabilites = [1/nb_restos] * nb_restos
             strategies.append(lambda p=probabilites: strategie_stochastique(pos_restaurants, p))
             strategy_names.append("Stochastique")
         elif choice == 3:
             seuil = int(input(f"Entrez le seuil pour greedy (joueur {i+1}) : "))
-            seuils[i] = seuil  
+            seuils[i] = seuil
             strategies.append(lambda p=i: strategie_greedy(
                 pos_restaurants,
                 nb_players_in_resto,
                 seuils[p],
                 players[p].get_rowcol(),
                 champ_de_vision(players[p].get_rowcol(), distance_vision, players, coupe_files),
-                temps_restant[p], 
+                temps_restant[p],
                 p,
-                nb_players  
+                nb_players
             ))
             strategy_names.append("Greedy")
         elif choice == 4:
@@ -218,17 +220,18 @@ def main(nb_jours):
         elif choice == 5:
             strategies.append(lambda p=i: regret_matching(pos_restaurants, historique, p, payoffs))
             strategy_names.append("Regret Matching")
-        elif choice == 6:  # 新增模仿策略
-            # 需要创建两个字典来跟踪历史数据
-            historique_scores = {j: 0 for j in range(nb_players)}
-            historique_choix = {j: random.choice(pos_restaurants) for j in range(nb_players)}
-            
+        elif choice == 6:
             strategies.append(lambda p=i: strategie_imitation(
                 pos_restaurants,
                 historique_scores,
-                historique_choix
+                historique_choix,
+                p
             ))
             strategy_names.append("Imitation")
+        elif choice == 7:
+            # For sequence fixe strategy, we need to pass the day parameter and player ID
+            strategies.append(lambda p=i, d=0: strategie_sequence_fixe(pos_restaurants, None, p, d))
+            strategy_names.append("Séquence Fixe")
         else:
             print("Stratégie aléatoire par défaut.")
             strategies.append(lambda: random.choice(pos_restaurants))
@@ -247,6 +250,7 @@ def main(nb_jours):
 
         # Réinitialiser les positions des joueurs et des coupe-files
         coupe_files = initial_coupe_files.copy()
+
         for o in coupe_files:
             (x1, y1) = draw_random_location()
             o.set_rowcol(x1, y1)
@@ -259,7 +263,15 @@ def main(nb_jours):
             game.mainiteration()
 
         # Réinitialiser les choix de restaurants et les chemins
-        choix_resto = [strategy() for strategy in strategies]
+        choix_resto = []
+        for idx, strategy in enumerate(strategies):
+            if strategy_names[idx] == "Séquence Fixe":
+                # For sequence fixe strategy, pass both player ID and day
+                choix_resto.append(strategy(d=day))
+            else:
+                # For other strategies, call normally
+                choix_resto.append(strategy())
+                
         path = []
         g = np.ones((nb_lignes, nb_cols), dtype=bool)
         for i in range(nb_lignes):
@@ -301,7 +313,7 @@ def main(nb_jours):
                         print(f"🍽️ Joueur {j} est arrivé au restaurant {r}")
 
                         # Vérifier que le joueur utilise la stratégie_greedy et que le seuil est dépassé
-                        if strategies[j].__name__ == "strategie_greedy" and seuils[j] is not None:
+                        if strategy_names[j] == "Greedy" and seuils[j] is not None:
                             if nb_players_in_resto(r) >= seuils[j]:
                                 print(f"⚠️ Trop de joueurs dans le restaurant {r}. Recherche d'un autre restaurant...")
 
@@ -345,9 +357,11 @@ def main(nb_jours):
 
             if "Imitation" in strategy_names:
                 for p in range(nb_players):
-                    # 只更新使用模仿策略的玩家需要的数据
-                    historique_scores[p] = total_scores[p]
-                    historique_choix[p] = choix_resto[p] if p < len(choix_resto) else random.choice(pos_restaurants)
+                    if strategy_names[p] == "Imitation":
+                        historique_scores[p] = total_scores[p]
+                        historique_choix[p] = choix_resto[p] if p < len(choix_resto) else random.choice(pos_restaurants)
+
+
 
             game.mainiteration()
             print("-" * 40)  # Séparation entre les itérations
@@ -386,7 +400,7 @@ def main(nb_jours):
     # 生成比较图表（修改后的统计逻辑）
     strategy_total = {}  # 记录策略总分
     strategy_count = {}  # 记录使用人数
-    
+
     # 遍历所有玩家统计数据
     for p in range(nb_players):
         strategy = strategy_names[p]
@@ -395,7 +409,7 @@ def main(nb_jours):
             strategy_count[strategy] = 0
         strategy_total[strategy] += total_scores[p]
         strategy_count[strategy] += 1
-    
+
     # 计算平均分数（处理除零错误）
     average_scores = {}
     for strategy in strategy_total:
@@ -403,30 +417,30 @@ def main(nb_jours):
             average_scores[strategy] = strategy_total[strategy] / strategy_count[strategy]
         else:
             average_scores[strategy] = 0
-    
+
     # 准备可视化数据
     labels = []
     values = []
     colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b']
     color_idx = 0
-    
+
     # 按策略名称排序保证颜色一致性
     for strategy in sorted(average_scores.keys()):
         labels.append(f"{strategy}\n(n={strategy_count[strategy]})")  # 显示使用人数
         values.append(average_scores[strategy])
         color_idx += 1
-    
+
     # 创建图表
     plt.figure(figsize=(12, 7))
     bars = plt.bar(labels, values, color=colors[:len(labels)])
-    
+
     # 添加数值标签
     for bar in bars:
         height = bar.get_height()
         plt.text(bar.get_x() + bar.get_width()/2., height,
-                 f'{height:.2f}',
-                 ha='center', va='bottom')
-    
+                f'{height:.2f}',
+                ha='center', va='bottom')
+
     # 图表装饰
     plt.xlabel('Stratégies (avec nombre de joueurs)')
     plt.ylabel('Score Moyen par Joueur')
@@ -434,11 +448,12 @@ def main(nb_jours):
     plt.xticks(rotation=15)
     plt.grid(axis='y', linestyle='--', alpha=0.7)
     plt.tight_layout()
-    
+
     # 保存并显示
     plt.savefig('strategy_comparison.png', dpi=300)
     plt.show()
     pygame.quit()
+
 
 if __name__ == '__main__':
     main(nb_jours=50)
