@@ -13,61 +13,74 @@ def strategie_stochastique(pos_restaurants, probabilites):
     return random.choices(pos_restaurants, weights=probabilites, k=1)[0]
 
 def strategie_greedy(pos_restaurants, nb_players_in_resto, seuil, position_joueur, champ_de_vision, temps_restant, joueur_id, nb_players):
-    """- Les joueurs ont une liste de préférences de restaurants basée sur la distance.
+    """
+    Stratégie greedy avec tests :
+    - Les joueurs ont une liste de préférences de restaurants.
     - Lorsqu'un joueur entre dans un restaurant, ceux qui le voient recalculent leur décision.
-    - Si le seuil de joueurs dans le restaurant actuel est atteint, le joueur cherche un autre restaurant visible dans son champ de vision.
-    - Si tous les restaurants visibles dépassent le seuil, le joueur se dirige vers le restaurant le plus proche avec le moins de joueurs.
-    - Si le temps restant est insuffisant pour changer de restaurant, le joueur reste dans le restaurant atteint.
+    - Si le seuil est atteint, le joueur cherche un autre restaurant de sa liste.
+    - Si tous les restaurants visibles dépassent son seuil, il va au plus proche avec le moins de joueurs.
+    - Si le temps manque pour changer, il reste dans le restaurant atteint.
     """
 
-    # Initialiser les préférences pour chaque joueur en fonction de la distance
-    prefs_restaurants = sorted(pos_restaurants, key=lambda resto: distManhattan(position_joueur, resto))
+    # Initialiser les préférences pour chaque joueur
+    prefs_restaurants = [pos_restaurants.copy() for _ in range(nb_players)]
+    for prefs in prefs_restaurants:
+        random.shuffle(prefs)
 
-    print(f"🔹 Joueur {joueur_id} - Position actuelle : {position_joueur}")
-    print(f"📋 Préférences des restaurants : {prefs_restaurants}")
+    if joueur_id >= len(prefs_restaurants):
+        # Initialiser les préférences si elles ne sont pas définies
+        prefs_restaurants.append(pos_restaurants.copy())
+        random.shuffle(prefs_restaurants[joueur_id])
+
+    preferences = prefs_restaurants[joueur_id]
+
+    print(f"🟢 Joueur {joueur_id} - Position actuelle : {position_joueur}")
+    print(f"🔹 Préférences des restaurants : {preferences}")
+
+    # Parcourir les préférences
+    for resto in preferences:
+        if resto in pos_restaurants:
+            nb_joueurs = nb_players_in_resto(pos_restaurants.index(resto))
+            distance = distManhattan(position_joueur, resto)
+
+            print(f"  📍 Test resto {resto} → Joueurs : {nb_joueurs}, Distance : {distance}")
+
+            # Vérification du seuil et du temps restant
+            if nb_joueurs < seuil and distance <= temps_restant:
+                print(f"✅ Joueur {joueur_id} choisit {resto} (Seuil OK, Temps OK)")
+                return resto
+
+    # Si tous les restaurants préférés dépassent le seuil :
+    # Trouver le restaurant visible le plus proche avec le moins de joueurs
+    best_choice = None
+    best_score = (float('inf'), float('inf'))  # Priorité : (nb_joueurs, distance)
 
     print(f"🔍 Joueur {joueur_id} explore le champ de vision : {champ_de_vision}")
 
-    for resto in prefs_restaurants:
-        if resto in champ_de_vision:
+    for resto in champ_de_vision:
+        if resto in pos_restaurants:
             nb_joueurs = nb_players_in_resto(pos_restaurants.index(resto))
             distance = distManhattan(position_joueur, resto)
 
             print(f"  🔎 Restaurant visible {resto} → Joueurs : {nb_joueurs}, Distance : {distance}")
 
-            # Vérification du seuil et du temps restant
-            if nb_joueurs < seuil and distance <= temps_restant:
-                print(f"✅ Joueur {joueur_id} choisit {resto} (Meilleur choix visible)")
-                return resto
+            # Vérifier que le joueur a assez de temps pour y aller
+            if distance > temps_restant:
+                print(f"    ⏳ {resto} est trop loin ! (Distance : {distance}, Temps restant : {temps_restant})")
+                continue
 
+            score = (nb_joueurs, distance)  # Priorité : moins de joueurs, puis distance
+            if score < best_score:
+                best_score = score
+                best_choice = resto
 
-    # Trouver le restaurant le plus proche (le joueur ne voit pas les restaurants)
-    best_choice = None
-    best_score = (float('inf'), float('inf'))  # Priorité : (nb_joueurs, distance)
-
-    # Parcourir les préférences
-    for resto in prefs_restaurants:
-        nb_joueurs = nb_players_in_resto(pos_restaurants.index(resto))
-        distance = distManhattan(position_joueur, resto)
-
-        print(f"  📍 Test resto {resto} → Joueurs : {nb_joueurs}, Distance : {distance}")
-
-        # Vérification du temps restant
-        if distance <= temps_restant:
-            print(f"✅ Joueur {joueur_id} choisit {resto} (Seuil OK, Temps OK)")
-            return resto
-        else:
-            print(f"    ⏳ {resto} est trop loin ! (Distance : {distance}, Temps restant : {temps_restant})")
-            continue
-
-        score = (nb_joueurs, distance)  # Priorité : moins de joueurs, puis distance
-        if score < best_score:
-            best_score = score
-            best_choice = resto
+    if best_choice:
+        print(f"✅ Joueur {joueur_id} choisit {best_choice} (Meilleur choix visible)")
+        return best_choice
 
     # Si aucun bon choix trouvé, choisir au hasard parmi les accessibles en temps restant
-    possibles = [r for r in prefs_restaurants if distManhattan(position_joueur, r) <= temps_restant]
-    final_choice = possibles[0] if possibles else random.choice(pos_restaurants)
+    possibles = [r for r in champ_de_vision if distManhattan(position_joueur, r) <= temps_restant]
+    final_choice = random.choice(possibles) if possibles else random.choice(pos_restaurants)
 
     print(f"⚠️ Joueur {joueur_id} n'a pas trouvé de choix optimal, prend au hasard : {final_choice}")
     return final_choice
@@ -115,79 +128,28 @@ def regret_matching(pos_restaurants, historique, joueur_id, payoffs):
 
     return random.choices(pos_restaurants, weights=probabilities, k=1)[0]
 
-def strategie_greedy_complex(pos_restaurants, nb_players_in_resto, seuil, position_joueur, champ_de_vision, temps_restant, joueur_id, nb_players, choix_resto):
+def strategie_imitation(pos_restaurants, historique_scores, historique_choix):
     """
-    Stratégie greedy complexe :
-    - Les joueurs ont une liste de préférences de restaurants basée sur la distance.
-    - Lorsqu'un joueur entre dans un restaurant, ceux qui le voient recalculent leur décision.
-    - Si le seuil de joueurs dans le restaurant actuel est atteint, le joueur cherche un autre restaurant visible dans son champ de vision.
-    - Si tous les restaurants visibles dépassent le seuil, le joueur se dirige vers le restaurant le plus proche avec le moins de joueurs.
-    - Si le temps restant est insuffisant pour changer de restaurant, le joueur reste dans le restaurant atteint.
+    战略模仿：玩家查看所有玩家的得分总和，然后模仿得分最高的玩家的餐厅选择。
+    如果有多个得分最高的玩家，则随机选择其中之一进行模仿。
 
-    Différences avec la stratégie greedy :
-    - **Réévaluation dynamique** : Contrairement à la stratégie greedy de base, cette version permet aux joueurs de réévaluer leur choix en cours de jeu.
-    - **Champ de vision** : Les joueurs prennent en compte les restaurants visibles pour ajuster leur décision.
-    - **Flexibilité** : Les joueurs peuvent changer de restaurant même après avoir fait un choix initial, s'ils trouvent une meilleure option.
-    - **Gestion du temps restant** : La stratégie vérifie constamment le temps restant pour atteindre les restaurants potentiels, permettant des ajustements en temps réel.
+    :param pos_restaurants: 所有餐厅位置
+    :param historique_scores: 记录每个玩家的历史得分 {joueur_id: total_score}
+    :param historique_choix: 记录每个玩家的历史餐厅选择 {joueur_id: dernier_choix}
+    :param joueur_id: 当前玩家ID
+    :return: 选择的餐厅
     """
 
-    # Initialiser les préférences pour chaque joueur en fonction de la distance
-    prefs_restaurants = sorted(pos_restaurants, key=lambda resto: distManhattan(position_joueur, resto))
+    if not historique_scores:
+        # 如果没有历史数据，则随机选择一个餐厅
+        return random.choice(pos_restaurants)
 
-    print(f"🔹 Joueur {joueur_id} - Position actuelle : {position_joueur}")
-    print(f"📋 Préférences des restaurants : {prefs_restaurants}")
+    # 找到得分最高的玩家
+    max_score = max(historique_scores.values())
+    meilleurs_joueurs = [j for j, score in historique_scores.items() if score == max_score]
 
-    print(f"🔍 Joueur {joueur_id} explore le champ de vision : {champ_de_vision}")
+    # 随机选择一个得分最高的玩家进行模仿
+    joueur_a_mimer = random.choice(meilleurs_joueurs)
 
-    # Vérifier si le joueur est déjà dans un restaurant
-    if position_joueur in pos_restaurants:
-        current_resto_index = pos_restaurants.index(position_joueur)
-        current_nb_joueurs = nb_players_in_resto(current_resto_index)
-
-        # Si le restaurant actuel dépasse le seuil, envisager de changer
-        if current_nb_joueurs >= seuil:
-            print(f"⚠️ Joueur {joueur_id} réévalue sa décision car le restaurant actuel a trop de joueurs.")
-            for resto in prefs_restaurants:
-                if resto in champ_de_vision and resto != position_joueur:
-                    nb_joueurs = nb_players_in_resto(pos_restaurants.index(resto))
-                    distance = distManhattan(position_joueur, resto)
-
-                    print(f"  🔎 Restaurant visible {resto} → Joueurs : {nb_joueurs}, Distance : {distance}")
-
-                    # Vérification du seuil et du temps restant
-                    if nb_joueurs < seuil and distance <= temps_restant:
-                        print(f"✅ Joueur {joueur_id} change pour {resto} (Meilleur choix visible)")
-                        choix_resto[joueur_id] = resto
-                        return
-
-    # Si le joueur n'est pas dans un restaurant ou s'il n'y a pas de meilleure option visible, trouver le meilleur choix
-    best_choice = None
-    best_score = (float('inf'), float('inf'))  # Priorité : (nb_joueurs, distance)
-
-    for resto in prefs_restaurants:
-        nb_joueurs = nb_players_in_resto(pos_restaurants.index(resto))
-        distance = distManhattan(position_joueur, resto)
-
-        print(f"  📍 Test resto {resto} → Joueurs : {nb_joueurs}, Distance : {distance}")
-
-        # Vérification du temps restant
-        if distance <= temps_restant:
-            score = (nb_joueurs, distance)  # Priorité : moins de joueurs, puis distance
-            if score < best_score:
-                best_score = score
-                best_choice = resto
-        else:
-            print(f"    ⏳ {resto} est trop loin ! (Distance : {distance}, Temps restant : {temps_restant})")
-
-    # Si un meilleur choix est trouvé, le prendre
-    if best_choice:
-        print(f"✅ Joueur {joueur_id} choisit {best_choice} (Meilleur choix global)")
-        choix_resto[joueur_id] = best_choice
-        return
-
-    # Si aucun bon choix trouvé, choisir au hasard parmi les accessibles en temps restant
-    possibles = [r for r in prefs_restaurants if distManhattan(position_joueur, r) <= temps_restant]
-    final_choice = possibles[0] if possibles else random.choice(pos_restaurants)
-
-    print(f"⚠️ Joueur {joueur_id} n'a pas trouvé de choix optimal, prend au hasard : {final_choice}")
-    choix_resto[joueur_id] = final_choice
+    # 返回该玩家上次选择的餐厅，如果有的话
+    return historique_choix.get(joueur_a_mimer, random.choice(pos_restaurants))
