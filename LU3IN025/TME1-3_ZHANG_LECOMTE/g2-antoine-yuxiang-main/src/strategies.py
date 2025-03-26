@@ -153,3 +153,34 @@ def strategie_imitation(pos_restaurants, historique_scores, historique_choix):
 
     # 返回该玩家上次选择的餐厅，如果有的话
     return historique_choix.get(joueur_a_mimer, random.choice(pos_restaurants))
+
+# In the strategies.py file:
+
+def strategie_sequence_fixe(pos_restaurants, historique_sequence, joueur_id, jour_actuel=None):
+    """
+    Fixed sequence rotation strategy:
+    - Each player has their own sequence offset based on their ID
+    - Cycles through restaurants in order
+    - After last restaurant, starts again from first
+    
+    :param pos_restaurants: List of all restaurant positions (sorted)
+    :param historique_sequence: Dictionary to track state (unused here)
+    :param joueur_id: Current player ID (used for sequence offset)
+    :param jour_actuel: Current day (0-based)
+    :return: Restaurant to visit on current day
+    """
+    if jour_actuel is None:
+        jour_actuel = 0  # Default to first day if not specified
+    
+    # Ensure restaurant list is sorted for consistent ordering
+    pos_restaurants_sorted = sorted(pos_restaurants)
+    
+    # Calculate which restaurant to visit based on day number and player ID
+    # This ensures each player has their own sequence offset
+    index_resto = (jour_actuel + joueur_id) % len(pos_restaurants_sorted)
+    resto_choisi = pos_restaurants_sorted[index_resto]
+    
+    print(f"📅 Joueur {joueur_id} Jour {jour_actuel+1}: "
+          f"Resto {index_resto+1}/{len(pos_restaurants_sorted)} → {resto_choisi}")
+    
+    return resto_choisi
