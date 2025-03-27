@@ -36,7 +36,7 @@ def init(_boardname=None):
     game = Game('Cartes/' + name + '.json', SpriteBuilder)
     game.O = Ontology(True, 'SpriteSheet-32x32/tiny_spritesheet_ontology.csv')
     game.populate_sprite_names(game.O)
-    game.fps = 5  # frames per second
+    game.fps = 10  # frames per second
     game.mainiteration()
     player = game.player
 
@@ -183,11 +183,14 @@ def main(nb_jours):
     strategies = []
     strategy_names = []  # enregistre les noms des stratégies
     choix_initiaux = {}
-    distance_vision = float('inf')
+    distance_vision = 5
     temps_restant = [iterations] * nb_players
     seuils = [float('inf')] * nb_players
-    historique = {}
-    payoffs = {}
+    historique = {} # regret matching
+    payoffs = {}  # regret matching
+    historique_scores = {}  # stratégie d'imitation
+    historique_choix = {}    # stratégie d'imitation
+    historique_sequence = {} # stratégie de séquence fixe
     player_coupe_file = [False] * nb_players
 
     # -------------------------------
@@ -424,6 +427,13 @@ def main(nb_jours):
             payoffs.setdefault(p, {}).setdefault(choix_resto[p], 0)
             payoffs[p][choix_resto[p]] += scores[p]
 
+            # Mise à jour pour la stratégie d'imitation
+            historique_scores[p] = scores[p]  # Mettre à jour le score du joueur
+            historique_choix[p] = choix_resto[p]  # Mettre à jour le choix du joueur
+
+            # Mise à jour pour la stratégie de séquence fixe
+            historique_sequence.setdefault(p, {}).setdefault(day, choix_resto[p])
+
     print("Scores totaux :", total_scores)
 
     # Générer un graphique comparatif (logique statistique modifiée)
@@ -451,7 +461,7 @@ def main(nb_jours):
     # Préparer les données pour la visualisation
     labels = []
     values = []
-    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b']
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#bcbd22'] 
     color_idx = 0
 
     # Trier par nom de stratégie pour garantir la cohérence des couleurs
@@ -482,6 +492,7 @@ def main(nb_jours):
     # Sauvegarder et afficher
     plt.savefig('strategy_comparison.png', dpi=300)
     plt.show()
+
     pygame.quit()
 
 if __name__ == '__main__':
