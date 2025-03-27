@@ -74,38 +74,41 @@ def strategie_greedy(pos_restaurants, nb_players_in_resto, seuil, position_joueu
 
 def fictitious_play(pos_restaurants, historique, joueur_id):
     """
-    Jeu fictif : le joueur choisit un restaurant en fonction des probabilités
-    calculées à partir de ses expériences passées.
+    Chaque joueur suppose que ses adversaires jouent selon une distribution fixe de stratégies.
+    Il observe les choix passés des autres joueurs et calcule la fréquence de chaque stratégie utilisée.
+    Il joue ensuite la meilleure réponse à cette distribution de stratégies estimée.
     """
-    if joueur_id not in historique:
-        # Initialiser l'historique du joueur
-        historique[joueur_id] = {r: 0 for r in pos_restaurants}
+    # 统计所有其他玩家的餐厅访问情况
+    restaurant_visits = {r: 0 for r in pos_restaurants}  # 初始化访问计数
 
-    # Calculer le total des visites
-    total_visits = sum(historique[joueur_id].values())
+    for other_id, visits in historique.items():
+        if other_id != joueur_id:  # 只统计 **其他玩家** 的访问情况
+            for restaurant, count in visits.items():
+                restaurant_visits[restaurant] += count
 
-    if total_visits == 0:
-        # Si aucun restaurant n'a été visité, choisir un restaurant au hasard
-        return random.choice(pos_restaurants)
+    # 选择访问次数最少的餐厅
+    min_visits = min(restaurant_visits.values())  # 找到最少访问次数
+    least_visited_restaurants = [r for r, v in restaurant_visits.items() if v == min_visits]
 
-    # Calculer les probabilités uniquement pour les restaurants visités
-    probabilities = [historique[joueur_id][r] / total_visits for r in pos_restaurants]
-
-    # Sélectionner un restaurant en fonction des probabilités calculées
-    return random.choices(pos_restaurants, weights=probabilities, k=1)[0]
-
+    return random.choice(least_visited_restaurants)  # 随机选择一个访问次数最少的餐厅
 
 def regret_matching(pos_restaurants, historique, joueur_id, payoffs):
     """
-    Stratégie d'appariement au regret : calcule les regrets et ajuste la stratégie 
-    pour maximiser les gains futurs.
+    Plutôt que d’estimer ce que les autres vont faire, chaque joueur ajuste ses choix en fonction du regret des décisions passées.
+    Le regret d'une action est la différence entre :
+    le gain qu'on aurait obtenu en jouant une autre action.
+    le gain obtenu en jouant l'action réellement choisie.
     """
     if joueur_id not in historique:
-        historique[joueur_id] = {r: 1 for r in pos_restaurants}
+        historique[joueur_id] = {r: 0 for r in pos_restaurants}
         payoffs[joueur_id] = {r: 0 for r in pos_restaurants}
 
     # Calcul du gain moyen par restaurant
     total_visits = sum(historique[joueur_id].values())
+    if total_visits == 0:
+        # Si aucun restaurant n'a été visité, choisir un restaurant au hasard
+        return random.choice(pos_restaurants)
+
     avg_payoff = {r: payoffs[joueur_id][r] / (historique[joueur_id][r] + 1e-5) for r in pos_restaurants}  # Évite la division par zéro
 
     # Calcul des regrets (écart entre le meilleur gain et les autres)
