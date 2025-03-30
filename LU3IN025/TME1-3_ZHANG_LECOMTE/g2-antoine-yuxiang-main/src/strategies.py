@@ -12,38 +12,45 @@ def strategie_stochastique(pos_restaurants, probabilites):
     """Stratégie stochastique : le joueur choisit un restaurant selon une distribution de probabilité."""
     return random.choices(pos_restaurants, weights=probabilites, k=1)[0]
 
-def strategie_greedy(pos_restaurants, nb_players_in_resto, seuil, position_joueur, champ_de_vision_func, distance_vision, temps_restant, joueur_id, preferences, players, coupe_files):
+def strategie_greedy(pos_restaurants, nb_players_in_resto, seuil, position_joueur, distance_vision, temps_restant, joueur_id, preferences, players, coupe_files):
     """
     - Les joueurs ont une liste de restaurants à visiter basée sur la distance (le plus éloigné en priorité).
-    - Lorsqu'un joueur entre dans un restaurant, ceux qui le voient parmi les greedy recalculent leur décision.
-    - Si le seuil de joueurs dans le restaurant actuel est atteint, le joueur cherche à se rendre dans son prochain restaurant de sa liste.
-    - Une fois tous les restaurants essayés, s'ils dépassent tous le seuil, le joueur se dirige vers le restaurant avec le moins de joueurs s'il lui reste suffisamment de temps.
-    - S'il n'a pas le temps, chercher celui avec le moins de joueurs qu'il est possible d'atteindre avec le temps qu'il lui reste.
+    - Lorsqu'un joueur entre dans un restaurant, ceux qui le voient parmi les greedy doivent le mémoriser.
+    - Le joueur greedy s'approche des restaurants de sa liste à tour de rôle et mémorise le nombre de joueurs arrêtés dans chacun des restaurants.
+    - Une fois tous les restaurants essayés, il choisit au hasard l'un des restaurants parmi ceux avec un nombre de joueurs en dessous de son seuil et s'y dirige, sans compter les restaurants pour lesquels il n'aura pas le temps de les rejoindre.
     """
-    # Trier les restaurants par distance décroissante par rapport à la position initiale
-    restaurants_tries = sorted(pos_restaurants, key=lambda r: distManhattan(position_joueur, r), reverse=True)
+    # Initialisation de la liste des restaurants à visiter basée sur la distance
+    distances = [(r, distManhattan(position_joueur, r)) for r in pos_restaurants]
+    distances.sort(key=lambda x: x[1], reverse=True)  # Tri par distance décroissante
 
-    # Filtrer les restaurants accessibles dans le temps restant et respectant le seuil
-    restaurants_accessibles = [
-        resto for resto in restaurants_tries
-        if distManhattan(position_joueur, resto) <= temps_restant and nb_players_in_resto(pos_restaurants.index(resto)) < seuil
-    ]
+    # Liste des restaurants à visiter
+    restaurants_a_visiter = [r for r, _ in distances]
 
-    if not restaurants_accessibles:
-        # Si aucun restaurant n'est accessible, rester sur place
-        preferences[joueur_id] = [position_joueur]
+    # Mémorisation du nombre de joueurs dans chaque restaurant
+    nb_joueurs_dans_resto = {tuple(r): 0 for r in pos_restaurants}
+
+    # Observation des restaurants
+    for r in restaurants_a_visiter:
+        if distManhattan(position_joueur, r) <= distance_vision:
+            nb_joueurs_dans_resto[tuple(r)] = nb_players_in_resto(pos_restaurants.index(r))
+
+    # Filtrer les restaurants accessibles dans le temps restant
+    restaurants_accessibles = [r for r in pos_restaurants if distManhattan(position_joueur, r) <= temps_restant]
+
+    # Choix du restaurant
+    restaurants_valides = [r for r in restaurants_accessibles if nb_joueurs_dans_resto[tuple(r)] < seuil]
+
+    if restaurants_valides:
+        choix = random.choice(restaurants_valides)
+        preferences[joueur_id].append(choix)
     else:
-        # Trouver le restaurant avec le moins de joueurs parmi ceux visibles
-        visible_positions = champ_de_vision_func(position_joueur, distance_vision)
-        restaurants_visibles = [resto for resto in restaurants_accessibles if resto in visible_positions]
-
-        if not restaurants_visibles:
-            # Si aucun restaurant n'est visible, aller au plus éloigné
-            preferences[joueur_id] = [restaurants_tries[0]]
+        # Si aucun restaurant valide, choisir un restaurant au hasard parmi ceux accessibles
+        if restaurants_accessibles:
+            choix = random.choice(restaurants_accessibles)
+            preferences[joueur_id].append(choix)
         else:
-            # Trouver le restaurant avec le moins de joueurs parmi ceux visibles
-            meilleur_resto = min(restaurants_visibles, key=lambda r: nb_players_in_resto(pos_restaurants.index(r)))
-            preferences[joueur_id] = [meilleur_resto]
+            # Si aucun restaurant accessible, rester sur place
+            preferences[joueur_id].append(position_joueur)
 
 def fictitious_play(pos_restaurants, historique, joueur_id):
     """
@@ -104,63 +111,53 @@ def regret_matching(pos_restaurants, historique, payoffs, last_choice):
     # Choisir l'action avec la probabilité calculée
     return pos_restaurants[np.random.choice(num_actions, p=probabilites)]
 
-def strategie_greedy_complex(pos_restaurants, nb_players_in_resto, seuil, position_joueur, champ_de_vision_func, distance_vision, temps_restant, joueur_id, preferences, historique_choix_joueurs, players, coupe_files):
+def human_behavior(pos_restaurants, nb_players_in_resto, position_joueur, distance_vision, temps_restant, joueur_id, preferences, players):
     """
-    Stratégie greedy complexe qui vérifie si le joueur est déjà dans un restaurant
-    et envisage de changer si le seuil est dépassé ou si les autres joueurs se sont arrêtés.
+    Stratégie humaine : attendre que tous les joueurs soient entrés dans un restaurant,
+    puis chercher le restaurant avec le moins de personnes et s'y déplacer.
     """
-    # Vérifier si le joueur est déjà dans un restaurant
-    current_resto_idx = None
-    for idx, resto in enumerate(pos_restaurants):
-        if position_joueur == resto:
-            current_resto_idx = idx
+    # Vérifier si tous les joueurs sont dans un restaurant
+    all_players_in_restaurant = True
+    for player in players:
+        if player.get_rowcol() not in pos_restaurants:
+            all_players_in_restaurant = False
             break
 
-    # Si le joueur est dans un restaurant et que le seuil est dépassé, envisager de changer
-    if current_resto_idx is not None:
-        nb_joueurs_current = nb_players_in_resto(current_resto_idx)
-        if nb_joueurs_current >= seuil:
-            # Le joueur doit envisager de changer de restaurant
-            preferences[joueur_id] = []  # Réinitialiser les préférences
+    if not all_players_in_restaurant:
+        # S'approcher des restaurants de manière stratégique
+        distances = [(r, distManhattan(position_joueur, r)) for r in pos_restaurants]
+        distances.sort(key=lambda x: x[1])  # Tri par distance croissante
+
+        # Liste des restaurants à visiter
+        restaurants_a_visiter = [r for r, _ in distances]
+
+        # Mémorisation du nombre de joueurs dans chaque restaurant
+        nb_joueurs_dans_resto = {tuple(r): 0 for r in pos_restaurants}
+
+        # Observation des restaurants
+        for r in restaurants_a_visiter:
+            if distManhattan(position_joueur, r) <= distance_vision:
+                nb_joueurs_dans_resto[tuple(r)] = nb_players_in_resto(pos_restaurants.index(r))
+
+        # Filtrer les restaurants accessibles dans le temps restant
+        restaurants_accessibles = [r for r in pos_restaurants if distManhattan(position_joueur, r) <= temps_restant]
+
+        # Choix du restaurant
+        if restaurants_accessibles:
+            choix = min(restaurants_accessibles, key=lambda r: nb_joueurs_dans_resto[tuple(r)])
+            preferences[joueur_id].append(choix)
         else:
-            # Vérifier si les autres joueurs se sont arrêtés
-            joueurs_arretes = 0
-            for other_id, choix in historique_choix_joueurs.items():
-                if other_id != joueur_id and choix == position_joueur:
-                    joueurs_arretes += 1
-
-            if joueurs_arretes >= 2:
-                # Si au moins deux autres joueurs se sont arrêtés, réévaluer les options
-                preferences[joueur_id] = []  # Réinitialiser les préférences
-            else:
-                # Le joueur reste dans le restaurant actuel
-                preferences[joueur_id] = [position_joueur]
-                return
-
-    # Trier les restaurants par distance décroissante par rapport à la position initiale
-    restaurants_tries = sorted(pos_restaurants, key=lambda r: distManhattan(position_joueur, r), reverse=True)
-
-    # Filtrer les restaurants accessibles dans le temps restant et respectant le seuil
-    restaurants_accessibles = [
-        resto for resto in restaurants_tries
-        if distManhattan(position_joueur, resto) <= temps_restant and nb_players_in_resto(pos_restaurants.index(resto)) < seuil
-    ]
-
-    if not restaurants_accessibles:
-        # Si aucun restaurant n'est accessible, rester sur place
-        preferences[joueur_id] = [position_joueur]
+            # Si aucun restaurant accessible, rester sur place
+            preferences[joueur_id].append(position_joueur)
     else:
-        # Trouver le restaurant avec le moins de joueurs parmi ceux visibles
-        visible_positions = champ_de_vision_func(position_joueur, distance_vision)
-        restaurants_visibles = [resto for resto in restaurants_accessibles if resto in visible_positions]
+        # Chercher le restaurant avec le moins de personnes
+        nb_joueurs_dans_resto = {tuple(r): nb_players_in_resto(pos_restaurants.index(r)) for r in pos_restaurants}
+        min_restaurant = min(pos_restaurants, key=lambda r: nb_joueurs_dans_resto[tuple(r)])
 
-        if not restaurants_visibles:
-            # Si aucun restaurant n'est visible, aller au plus éloigné
-            preferences[joueur_id] = [restaurants_tries[0]]
-        else:
-            # Trouver le restaurant avec le moins de joueurs parmi ceux visibles
-            meilleur_resto = min(restaurants_visibles, key=lambda r: nb_players_in_resto(pos_restaurants.index(r)))
-            preferences[joueur_id] = [meilleur_resto]
+        # Se déplacer vers le restaurant avec le moins de personnes
+        preferences[joueur_id].append(min_restaurant)
+
+    return preferences[joueur_id][-1]  # Retourner le dernier choix
 
 def strategie_imitation(pos_restaurants, historique_scores, historique_choix):
     """
