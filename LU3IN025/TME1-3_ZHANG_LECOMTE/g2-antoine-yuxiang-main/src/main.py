@@ -26,7 +26,7 @@ def init(_boardname=None):
     game = Game('Cartes/' + name + '.json', SpriteBuilder)
     game.O = Ontology(True, 'SpriteSheet-32x32/tiny_spritesheet_ontology.csv')
     game.populate_sprite_names(game.O)
-    game.fps = 10  # frames per second
+    #game.fps = 10  # frames per second
     game.mainiteration()
     player = game.player
 
@@ -36,7 +36,7 @@ def item_states(items):
 def player_states(players):
     return [p.get_rowcol() for p in players]
 
-def main(nb_iterations, nb_jours):
+def main(nb_parties, nb_jours):
     iterations = 40  # nb de pas max par episode
     if len(sys.argv) == 2:
         iterations = int(sys.argv[1])
@@ -235,7 +235,7 @@ def main(nb_iterations, nb_jours):
 
     all_scores = []
 
-    for iteration in range(nb_iterations):
+    for iteration in range(nb_parties):
         total_scores = [0] * nb_players
         initial_coupe_files = [o for o in game.layers["ramassable"]]
         for day in range(nb_jours):
@@ -443,7 +443,7 @@ def main(nb_iterations, nb_jours):
 
     plt.xlabel('Joueurs et Stratégies')
     plt.ylabel('Score Total')
-    plt.title(f'Scores Totaux par Joueur sur {nb_iterations} Itérations')
+    plt.title(f'Scores Totaux par Joueur sur {nb_parties} parties')
     plt.legend()
     plt.grid(axis='y', linestyle='--', alpha=0.7)
     plt.tight_layout()
@@ -454,4 +454,4 @@ def main(nb_iterations, nb_jours):
     pygame.quit()
 
 if __name__ == '__main__':
-    main(nb_iterations=1, nb_jours=50)
+    main(nb_parties=1, nb_jours=50)
