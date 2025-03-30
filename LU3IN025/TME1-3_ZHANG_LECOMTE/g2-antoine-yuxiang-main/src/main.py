@@ -26,7 +26,7 @@ def init(_boardname=None):
     game = Game('Cartes/' + name + '.json', SpriteBuilder)
     game.O = Ontology(True, 'SpriteSheet-32x32/tiny_spritesheet_ontology.csv')
     game.populate_sprite_names(game.O)
-    #game.fps = 10  # frames per second
+    game.fps = 10  # frames per second
     game.mainiteration()
     player = game.player
 
@@ -98,9 +98,9 @@ def main(nb_iterations, nb_jours):
         Version modifiée avec visibilité des restaurants
         :param position_joueur: position actuelle du joueur
         :param distance_vision: distance de vision du joueur
-        :param pos_restaurants: liste des positions des restaurants (nouveau paramètre)
-        :param players: liste des joueurs
-        :param coupe_files: liste des coupe-files
+        :param pos_restaurants: liste des positions des restaurants
+        :param players: liste des objets joueurs
+        :param coupe_files: liste des objets coupe-files
         :return: liste des positions visibles (restaurants, joueurs et coupe-files)
         """
         visible_positions = []
@@ -113,9 +113,8 @@ def main(nb_iterations, nb_jours):
         # Visibilité des joueurs
         for player in players:
             player_pos = player.get_rowcol()
-            if player_pos != position_joueur:
-                if distManhattan(position_joueur, player_pos) <= distance_vision:
-                    visible_positions.append(player_pos)
+            if player_pos != position_joueur and distManhattan(position_joueur, player_pos) <= distance_vision:
+                visible_positions.append(player_pos)
 
         # Visibilité des coupe-files
         for cf in coupe_files:
@@ -141,15 +140,16 @@ def main(nb_iterations, nb_jours):
     strategies = []
     strategy_names = []
     choix_initiaux = {}
-    distance_vision = float('inf')
+    distance_vision = float('inf')  # Définir une valeur par défaut ou laisser l'utilisateur la définir
     temps_restant = [iterations] * nb_players
     seuils = [float('inf')] * nb_players
     historique = {
         'avg_visits': {tuple(r): 1 for r in pos_restaurants}
     }
-    for p in range(nb_players):
-        historique[p] = {tuple(r): 0 for r in pos_restaurants}
     payoffs = {i: {} for i in range(nb_players)}
+    for p in range(nb_players):
+        historique[p] = {tuple(r): 1 for r in pos_restaurants}  # 1 visite initiale
+        payoffs[p] = {tuple(r): 1 for r in pos_restaurants}     # 1 point initial
     last_choices = [None] * nb_players
     historique_scores = {}
     historique_choix = {}
@@ -184,18 +184,13 @@ def main(nb_iterations, nb_jours):
                 nb_players_in_resto,
                 seuils[p],
                 players[p].get_rowcol(),
-                champ_de_vision(
-                    position_joueur=players[p].get_rowcol(),
-                    distance_vision=distance_vision,
-                    pos_restaurants=pos_restaurants,
-                    players=players,
-                    coupe_files=coupe_files
-                ),
+                lambda pos, dist: champ_de_vision(pos, dist, pos_restaurants, players, coupe_files),
+                distance_vision,
                 temps_restant[p],
                 p,
-                nb_players,
-                choix_resto,
-                preferences
+                preferences,
+                players,  # Passé explicitement
+                coupe_files  # Passé explicitement
             ))
             strategy_names.append("Greedy")
         elif choice == 4:
@@ -205,7 +200,6 @@ def main(nb_iterations, nb_jours):
             strategies.append(lambda p=i: regret_matching(
                 [tuple(r) for r in pos_restaurants],
                 historique[p],
-                p,
                 payoffs[p],
                 last_choices[p]
             ))
@@ -218,19 +212,14 @@ def main(nb_iterations, nb_jours):
                 nb_players_in_resto,
                 seuils[p],
                 players[p].get_rowcol(),
-                champ_de_vision(
-                    position_joueur=players[p].get_rowcol(),
-                    distance_vision=distance_vision,
-                    pos_restaurants=pos_restaurants,
-                    players=players,
-                    coupe_files=coupe_files
-                ),
+                lambda pos, dist: champ_de_vision(pos, dist, pos_restaurants, players, coupe_files),
+                distance_vision,
                 temps_restant[p],
                 p,
-                nb_players,
-                choix_resto,
                 preferences,
-                historique_choix_joueurs
+                historique_choix_joueurs,
+                players,  # Passé explicitement
+                coupe_files  # Passé explicitement
             ))
             strategy_names.append("Greedy Complexe")
         elif choice == 7:
@@ -247,7 +236,6 @@ def main(nb_iterations, nb_jours):
     all_scores = []
 
     for iteration in range(nb_iterations):
-        random.seed(iteration)  # Reset the random seed for each iteration
         total_scores = [0] * nb_players
         initial_coupe_files = [o for o in game.layers["ramassable"]]
         for day in range(nb_jours):
@@ -295,91 +283,70 @@ def main(nb_iterations, nb_jours):
             for i in range(iterations):
                 print(f"\n--- ITERATION {i+1}/{iterations} ---")
 
-                for j in range(nb_players):
-                    if i < len(path[j]):
-                        (row, col) = path[j][i]
-                        players[j].set_rowcol(row, col)
+                for p in range(nb_players):
+                    if i < len(path[p]):
+                        (row, col) = path[p][i]
+                        players[p].set_rowcol(row, col)
 
-                        print(f"Joueur {j+1} | Position: ({row}, {col}) | Temps restant: {temps_restant[j]} | Destination: {choix_resto[j]}")
+                        print(f"Joueur {p+1} | Position: ({row}, {col}) | Temps restant: {temps_restant[p]} | Destination: {choix_resto[p]}")
 
-                        if temps_restant[j] <= 0:
-                            print(f"ALERTE: Le temps du joueur {j+1} est écoulé !")
+                        if temps_restant[p] <= 0:
+                            print(f"ALERTE: Le temps du joueur {p+1} est écoulé !")
 
-                            if strategy_names[j] == "Greedy":
-                                strategie_greedy(
-                                    pos_restaurants,
-                                    nb_players_in_resto,
-                                    seuils[j],
-                                    players[j].get_rowcol(),
-                                    champ_de_vision(
-                                        position_joueur=players[j].get_rowcol(),
-                                        distance_vision=distance_vision,
-                                        pos_restaurants=pos_restaurants,
-                                        players=players,
-                                        coupe_files=coupe_files
-                                    ),
-                                    temps_restant[j],
-                                    j,
-                                    nb_players,
-                                    choix_resto,
-                                    preferences
-                                )
-                                if preferences[j]:
-                                    new_target = preferences[j][0]
-                                    if new_target != choix_resto[j]:
-                                        print(f"Joueur {j+1} change de restaurant: {choix_resto[j]} ➝ {new_target}")
-                                        choix_resto[j] = new_target
-                                        prob = ProblemeGrid2D(players[j].get_rowcol(), choix_resto[j], g, 'manhattan')
-                                        path[j] = probleme.astar(prob, verbose=False)
+                            if strategy_names[p] in ["Greedy", "Greedy Complexe"]:
+                                if strategy_names[p] == "Greedy":
+                                    strategie_greedy(
+                                        pos_restaurants,
+                                        nb_players_in_resto,
+                                        seuils[p],
+                                        players[p].get_rowcol(),
+                                        lambda pos, dist: champ_de_vision(pos, dist, pos_restaurants, players, coupe_files),
+                                        distance_vision,
+                                        temps_restant[p],
+                                        p,
+                                        preferences,
+                                        players,  # Passé explicitement
+                                        coupe_files  # Passé explicitement
+                                    )
+                                else:
+                                    strategie_greedy_complex(
+                                        pos_restaurants,
+                                        nb_players_in_resto,
+                                        seuils[p],
+                                        players[p].get_rowcol(),
+                                        lambda pos, dist: champ_de_vision(pos, dist, pos_restaurants, players, coupe_files),
+                                        distance_vision,
+                                        temps_restant[p],
+                                        p,
+                                        preferences,
+                                        historique_choix_joueurs,
+                                        players,  # Passé explicitement
+                                        coupe_files  # Passé explicitement
+                                    )
 
-                                        if i < len(path[j]):
-                                            (row, col) = path[j][i]
-                                            players[j].set_rowcol(row, col)
+                                if preferences[p]:
+                                    new_target = preferences[p][0]
+                                    if new_target != choix_resto[p]:
+                                        print(f"Joueur {p+1} change de restaurant: {choix_resto[p]} ➝ {new_target}")
+                                        choix_resto[p] = new_target
+                                        prob = ProblemeGrid2D(players[p].get_rowcol(), choix_resto[p], g, 'manhattan')
+                                        path[p] = probleme.astar(prob, verbose=False)
 
-                            elif strategy_names[j] == "Regret Matching":
-                                last_choices[j] = choix_resto[j]
-                                choix_resto[j] = strategies[j]()
-
-                            elif strategy_names[j] == "Greedy Complexe":
-                                strategie_greedy_complex(
-                                    pos_restaurants,
-                                    nb_players_in_resto,
-                                    seuils[j],
-                                    players[j].get_rowcol(),
-                                    champ_de_vision(
-                                        position_joueur=players[j].get_rowcol(),
-                                        distance_vision=distance_vision,
-                                        pos_restaurants=pos_restaurants,
-                                        players=players,
-                                        coupe_files=coupe_files
-                                    ),
-                                    temps_restant[j],
-                                    j,
-                                    nb_players,
-                                    choix_resto,
-                                    preferences,
-                                    historique_choix_joueurs
-                                )
-                                if preferences[j]:
-                                    new_target = preferences[j][0]
-                                    if new_target != choix_resto[j]:
-                                        print(f"Joueur {j+1} change de restaurant: {choix_resto[j]} ➝ {new_target}")
-                                        choix_resto[j] = new_target
-                                        prob = ProblemeGrid2D(players[j].get_rowcol(), choix_resto[j], g, 'manhattan')
-                                        path[j] = probleme.astar(prob, verbose=False)
-
-                                        if i < len(path[j]):
-                                            (row, col) = path[j][i]
-                                            players[j].set_rowcol(row, col)
+                                        if i < len(path[p]):
+                                            (row, col) = path[p][i]
+                                            players[p].set_rowcol(row, col)
+                            elif strategy_names[p] == "Regret Matching":
+                                last_choices[p] = choix_resto[p]
+                                choix_resto[p] = strategies[p]()
                             else:
                                 choix_resto[p] = strategies[p]()
 
                     for cf in coupe_files:
-                        if (row, col) == cf.get_rowcol() and not player_coupe_file[j]:
-                            player_coupe_file[j] = True
+                        if (row, col) == cf.get_rowcol() and not player_coupe_file[p]:
+                            player_coupe_file[p] = True
                             game.layers["ramassable"].remove(cf)
                             coupe_files.remove(cf)
-                            print(f"Joueur {j+1} a ramassé un Coupe-file!")
+                            print(f"Joueur {p+1} a ramassé un Coupe-file!")
                             break
 
                 for j in range(nb_players):
@@ -487,4 +454,4 @@ def main(nb_iterations, nb_jours):
     pygame.quit()
 
 if __name__ == '__main__':
-    main(nb_iterations=5, nb_jours=50)
+    main(nb_iterations=1, nb_jours=50)
