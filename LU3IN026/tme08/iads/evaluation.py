@@ -84,5 +84,4 @@ def validation_croisee(C, DS, nb_iter):
     
     print("------ fin affichage validation croisée")
     return perf, taux_moyen, taux_ecart
-
 # ------------------------ 

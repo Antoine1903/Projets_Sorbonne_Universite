@@ -6,7 +6,7 @@ File: utils.py
 Année: LU3IN026 - semestre 2 - 2024-2025, Sorbonne Université
 """
 
-
+# ------------------------ 
 # Fonctions utiles
 # Version de départ : Février 2025
 
@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-
+# ------------------------ 
 # genere_dataset_uniform:
 def genere_dataset_uniform(d, nc, binf=-1, bsup=1):
     """ int * int * float^2 -> tuple[ndarray, ndarray]

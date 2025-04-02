@@ -294,6 +294,215 @@ class ClassifierMultiOAA(Classifier):
         """
         return max(self.models.keys(), key=lambda c: self.models[c].score(x))  # Retourner la classe ayant le score maximal
 
+class NoeudCategoriel:
+    """ Classe pour représenter des noeuds d'un arbre de décision
+    """
+    def __init__(self, num_att=-1, nom=''):
+        """ Constructeur: il prend en argument
+            - num_att (int) : le numéro de l'attribut auquel il se rapporte: de 0 à ...
+              si le noeud se rapporte à la classe, le numéro est -1, on n'a pas besoin
+              de le préciser
+            - nom (str) : une chaîne de caractères donnant le nom de l'attribut si
+              il est connu (sinon, on ne met rien et le nom sera donné de façon 
+              générique: "att_Numéro")
+        """
+        self.attribut = num_att    # numéro de l'attribut
+        if (nom == ''):            # son nom si connu
+            self.nom_attribut = 'att_'+str(num_att)
+        else:
+            self.nom_attribut = nom 
+        self.Les_fils = None       # aucun fils à la création, ils seront ajoutés
+        self.classe   = None       # valeur de la classe si c'est une feuille
+        
+    def est_feuille(self):
+        """ rend True si l'arbre est une feuille 
+            c'est une feuille s'il n'a aucun fils
+        """
+        return self.Les_fils == None
+    
+    def ajoute_fils(self, valeur, Fils):
+        """ valeur : valeur de l'attribut de ce noeud qui doit être associée à Fils
+                     le type de cette valeur dépend de la base
+            Fils (NoeudCategoriel) : un nouveau fils pour ce noeud
+            Les fils sont stockés sous la forme d'un dictionnaire:
+            Dictionnaire {valeur_attribut : NoeudCategoriel}
+        """
+        if self.Les_fils == None:
+            self.Les_fils = dict()
+        self.Les_fils[valeur] = Fils
+        # Rem: attention, on ne fait aucun contrôle, la nouvelle association peut
+        # écraser une association existante.
+    
+    def ajoute_feuille(self,classe):
+        """ classe: valeur de la classe
+            Ce noeud devient un noeud feuille
+        """
+        self.classe    = classe
+        self.Les_fils  = None   # normalement, pas obligatoire ici, c'est pour être sûr
+        
+    def classifie(self, exemple):
+        """ exemple : numpy.array
+            rend la classe de l'exemple 
+            on rend la valeur None si l'exemple ne peut pas être classé (cf. les questions
+            posées en fin de ce notebook)
+        """
+        if self.est_feuille():
+            return self.classe
+        if exemple[self.attribut] in self.Les_fils:
+            # descente récursive dans le noeud associé à la valeur de l'attribut
+            # pour cet exemple:
+            return self.Les_fils[exemple[self.attribut]].classifie(exemple)
+        else:
+            # Cas particulier : on ne trouve pas la valeur de l'exemple dans la liste des
+            # fils du noeud... Voir la fin de ce notebook pour essayer de résoudre ce mystère...
+            print('\t*** Warning: attribut ',self.nom_attribut,' -> Valeur inconnue: ',exemple[self.attribut])
+            return None
+    
+    def compte_feuilles(self):
+        """ rend le nombre de feuilles sous ce noeud
+        """
+        if self.est_feuille():
+            return 1
+        total = 0
+        for noeud in self.Les_fils:
+            total += self.Les_fils[noeud].compte_feuilles()
+        return total
+     
+    def to_graph(self, g, prefixe='A'):
+        """ construit une représentation de l'arbre pour pouvoir l'afficher graphiquement
+            Cette fonction ne nous intéressera pas plus que ça, elle ne sera donc pas expliquée            
+        """
+        if self.est_feuille():
+            g.node(prefixe,str(self.classe),shape='box')
+        else:
+            g.node(prefixe, self.nom_attribut)
+            i =0
+            for (valeur, sous_arbre) in self.Les_fils.items():
+                sous_arbre.to_graph(g,prefixe+str(i))
+                g.edge(prefixe,prefixe+str(i), valeur)
+                i = i+1        
+        return g
+
+def construit_AD(X, Y, epsilon, LNoms=[]):
+    """ 
+    X,Y : dataset
+    epsilon : seuil d'entropie pour le critère d'arrêt 
+    LNoms : liste des noms de features (colonnes) de description 
+    """
+    
+    entropie_ens = entropie(Y)
+    if entropie_ens <= epsilon:
+        # ARRET : on crée une feuille
+        noeud = NoeudCategoriel(-1, "Label")
+        noeud.ajoute_feuille(classe_majoritaire(Y))
+        return noeud
+
+    # Initialisation pour trouver le meilleur attribut
+    min_entropie = float('inf')
+    i_best = -1
+    Xbest_valeurs = None
+    
+    # Parcours de tous les attributs
+    for i in range(X.shape[1]):
+        valeurs = np.unique(X[:, i])  # Valeurs distinctes de l'attribut
+        entropie_cond = 0.0
+        
+        for v in valeurs:
+            Y_v = Y[X[:, i] == v]
+            if len(Y_v) > 0:
+                p = len(Y_v) / len(Y)
+                entropie_cond += p * entropie(Y_v)
+        
+        # Mise à jour du meilleur attribut
+        if entropie_cond < min_entropie:
+            min_entropie = entropie_cond
+            i_best = i
+            Xbest_valeurs = valeurs
+    
+    # Si aucun attribut n'apporte un gain d'information
+    if i_best == -1:
+        noeud = NoeudCategoriel(-1, "Label")
+        noeud.ajoute_feuille(classe_majoritaire(Y))
+        return noeud
+    
+    # Création du noeud avec le meilleur attribut
+    nom_attribut = LNoms[i_best] if LNoms else ''
+    noeud = NoeudCategoriel(i_best, nom_attribut)
+    
+    # Vérification que Xbest_valeurs n'est pas vide
+    if Xbest_valeurs is None:
+        return noeud
+    
+    # Ajout des fils pour chaque valeur de l'attribut
+    for v in Xbest_valeurs:
+        X_v = X[X[:, i_best] == v, :]  # Assurer que X_v reste en 2D
+        Y_v = Y[X[:, i_best] == v]
+
+        # Vérifier que l'ensemble n'est pas vide avant l'appel récursif
+        if len(Y_v) > 0:
+            noeud.ajoute_fils(v, construit_AD(X_v, Y_v, epsilon, LNoms))
+
+    return noeud
+
+class ClassifierArbreDecision(Classifier):
+    """ Classe pour représenter un classifieur par arbre de décision
+    """
+    
+    def __init__(self, input_dimension, epsilon, LNoms=[]):
+        """ Constructeur
+            Argument:
+                - intput_dimension (int) : dimension de la description des exemples
+                - epsilon (float) : paramètre de l'algorithme (cf. explications précédentes)
+                - LNoms : Liste des noms de dimensions (si connues)
+            Hypothèse : input_dimension > 0
+        """
+        Classifier.__init__(self,input_dimension)  # Appel du constructeur de la classe mère
+        self.epsilon = epsilon
+        self.LNoms = LNoms
+        # l'arbre est manipulé par sa racine qui sera un Noeud
+        self.racine = None
+        
+    def toString(self):
+        """  -> str
+            rend le nom du classifieur avec ses paramètres
+        """
+        return 'ClassifierArbreDecision ['+str(self.dimension) + '] eps='+str(self.epsilon)
+        
+    def train(self, desc_set, label_set):
+        """ Permet d'entrainer le modele sur l'ensemble donné
+            desc_set: ndarray avec des descriptions
+            label_set: ndarray avec les labels correspondants
+            Hypothèse: desc_set et label_set ont le même nombre de lignes
+        """        
+        self.racine = construit_AD(desc_set, label_set, self.epsilon, self.LNoms)
+    
+    def score(self, x):
+        """ rend le score de prédiction sur x (valeur réelle)
+            x: une description
+        """
+        # cette méthode ne fait rien dans notre implémentation :
+        pass
+    
+    def predict(self, x):
+        """ x (array): une description d'exemple
+            rend la prediction sur x             
+        """
+        if self.racine is None:
+            raise ValueError("L'arbre n'a pas été entraîné")
+        return self.racine.classifie(x)
+
+    def number_leaves(self):
+        """ rend le nombre de feuilles de l'arbre
+        """
+        return self.racine.compte_feuilles()
+    
+    def draw(self, GTree):
+        """ affichage de l'arbre sous forme graphique
+            Cette fonction modifie GTree par effet de bord
+        """
+        if self.racine:
+            self.racine.to_graph(GTree)
+
 def classe_majoritaire(Y):
     """ Y : (array) : array de labels
         rend la classe majoritaire ()
@@ -614,3 +823,141 @@ class ClassifierArbreNumerique(Classifier):
             Cette fonction modifie GTree par effet de bord
         """
         self.racine.to_graph(GTree)
+
+class ClassifierArbre(Classifier):
+    """ Classe pour représenter un classifieur par arbre de décision généralisé
+        qui gère à la fois les variables numériques et catégorielles.
+    """
+
+    def __init__(self, input_dimension, epsilon, LNoms=[]):
+        """ Constructeur
+            Argument:
+                - input_dimension (int) : dimension de la description des exemples
+                - epsilon (float) : paramètre de l'algorithme (seuil d'entropie pour le critère d'arrêt)
+                - LNoms : Liste des noms de dimensions (si connues)
+            Hypothèse : input_dimension > 0
+        """
+        super().__init__(input_dimension)
+        self.epsilon = epsilon
+        self.LNoms = LNoms
+        self.racine = None
+
+    def toString(self):
+        """ Rend le nom du classifieur avec ses paramètres """
+        return f'ClassifierArbre [{self.dimension}] eps={self.epsilon}'
+
+    def train(self, desc_set, label_set):
+        """ Permet d'entraîner le modèle sur l'ensemble donné
+            desc_set: ndarray avec des descriptions
+            label_set: ndarray avec les labels correspondants
+            Hypothèse: desc_set et label_set ont le même nombre de lignes
+        """
+        self.racine = self.construit_AD(desc_set, label_set, self.epsilon, self.LNoms)
+
+    def score(self, x):
+        """ Rend le score de prédiction sur x (valeur réelle)
+            x: une description
+        """
+        pass
+
+    def predict(self, x):
+        """ x (array): une description d'exemple
+            Rend la prédiction sur x
+        """
+        if self.racine is None:
+            raise ValueError("L'arbre n'a pas été entraîné")
+        return self.racine.classifie(x)
+
+    def accuracy(self, desc_set, label_set):
+        """ Permet de calculer la qualité du système sur un dataset donné
+            desc_set: ndarray avec des descriptions
+            label_set: ndarray avec les labels correspondants
+            Hypothèse: desc_set et label_set ont le même nombre de lignes
+        """
+        nb_ok = 0
+        for i in range(desc_set.shape[0]):
+            if self.predict(desc_set[i, :]) == label_set[i]:
+                nb_ok += 1
+        acc = nb_ok / (desc_set.shape[0] * 1.0)
+        return acc
+
+    def number_leaves(self):
+        """ Rend le nombre de feuilles de l'arbre """
+        return self.racine.compte_feuilles()
+
+    def affiche(self, GTree):
+        """ Affichage de l'arbre sous forme graphique
+            Cette fonction modifie GTree par effet de bord
+        """
+        if self.racine:
+            self.racine.to_graph(GTree)
+
+    def construit_AD(self, X, Y, epsilon, LNoms=[]):
+        """ Construit l'arbre de décision en fonction du type des attributs
+            X, Y : dataset
+            epsilon : seuil d'entropie pour le critère d'arrêt
+            LNoms : liste des noms de features (colonnes) de description
+        """
+        entropie_classe = entropie(Y)
+        if entropie_classe <= epsilon or len(Y) <= 1:
+            # ARRET : on crée une feuille
+            noeud = NoeudCategoriel(-1, "Label")
+            noeud.ajoute_feuille(classe_majoritaire(Y))
+            return noeud
+
+        # Initialisation pour trouver le meilleur attribut
+        min_entropie = float('inf')
+        i_best = -1
+        Xbest_valeurs = None
+        Xbest_seuil = None
+
+        # Parcours de tous les attributs
+        for i in range(X.shape[1]):
+            if np.issubdtype(X[:, i].dtype, np.number):
+                # Attribut numérique
+                (seuil, entropie_cond), _ = discretise(X, Y, i)
+                if seuil is None:
+                    continue
+                if entropie_cond < min_entropie:
+                    min_entropie = entropie_cond
+                    i_best = i
+                    Xbest_seuil = seuil
+            else:
+                # Attribut catégoriel
+                valeurs = np.unique(X[:, i])
+                entropie_cond = 0.0
+                for v in valeurs:
+                    Y_v = Y[X[:, i] == v]
+                    if len(Y_v) > 0:
+                        p = len(Y_v) / len(Y)
+                        entropie_cond += p * entropie(Y_v)
+                if entropie_cond < min_entropie:
+                    min_entropie = entropie_cond
+                    i_best = i
+                    Xbest_valeurs = valeurs
+
+        # Si aucun attribut n'apporte un gain d'information
+        if i_best == -1:
+            noeud = NoeudCategoriel(-1, "Label")
+            noeud.ajoute_feuille(classe_majoritaire(Y))
+            return noeud
+
+        # Création du noeud avec le meilleur attribut
+        nom_attribut = LNoms[i_best] if LNoms else ''
+        if Xbest_seuil is not None:
+            # Attribut numérique
+            noeud = NoeudNumerique(i_best, nom_attribut)
+            (left_data, left_class), (right_data, right_class) = partitionne(X, Y, i_best, Xbest_seuil)
+            noeud.ajoute_fils(Xbest_seuil, self.construit_AD(left_data, left_class, epsilon, LNoms),
+                              self.construit_AD(right_data, right_class, epsilon, LNoms))
+        else:
+            # Attribut catégoriel
+            noeud = NoeudCategoriel(i_best, nom_attribut)
+            for v in Xbest_valeurs:
+                X_v = X[X[:, i_best] == v, :]
+                Y_v = Y[X[:, i_best] == v]
+                if len(Y_v) > 0:
+                    noeud.ajoute_fils(v, self.construit_AD(X_v, Y_v, epsilon, LNoms))
+
+        return noeud
+# ------------------------ 
