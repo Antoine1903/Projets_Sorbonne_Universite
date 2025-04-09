@@ -248,27 +248,18 @@ class ClassifierPerceptronBiais(ClassifierPerceptron):
                 self.allw.append(self.w.copy())  # Stocker l'évolution des poids   
                 
 class ClassifierMultiOAA(Classifier):
-    """ Classifieur multi-classes
-    """
+    """ Classifieur multiclasses basé sur la stratégie One-vs-All avec gestion d'erreurs. """
+    
     def __init__(self, cl_bin):
-        """ Constructeur de Classifier
-            Argument:
-                - input_dimension (int) : dimension de la description des exemples (espace originel)
-                - cl_bin: classifieur binaire positif/négatif
-            Hypothèse : input_dimension > 0
+        """ Constructeur de ClassifierMultiOAA
+            cl_bin : classifieur binaire utilisé pour chaque modèle binaire
         """
         self.cl_bin = cl_bin
         self.models = {}
         self.classes = None
         
-        
     def train(self, desc_set, label_set):
-        """ Permet d'entrainer le modele sur l'ensemble donné
-            réalise une itération sur l'ensemble des données prises aléatoirement
-            desc_set: ndarray avec des descriptions
-            label_set: ndarray avec les labels correspondants
-            Hypothèse: desc_set et label_set ont le même nombre de lignes
-        """        
+        """ Entraînement du modèle One-vs-All """
         self.classes = np.unique(label_set)
         
         for c in self.classes:
@@ -280,19 +271,31 @@ class ClassifierMultiOAA(Classifier):
             cl_bin_copy.train(desc_set, labels_bin)  # Entraînement sur les données
             self.models[c] = cl_bin_copy  # Stocker le classifieur pour la classe c
         
+    def score(self, x):
+        """ Retourne le score de prédiction pour x (valeur réelle) """
+        scores = {}
+        for c, model in self.models.items():
+            try:
+                score = model.score(x)  # Tenter d'obtenir le score du modèle pour la classe c
+                if score is None:  # Vérifier si le score est None
+                    score = -np.inf  # Attribuer un score faible si score est None
+            except Exception as e:  # Capturer toutes les erreurs possibles
+                score = -np.inf  # Attribuer un score faible en cas d'erreur
+            
+            scores[c] = score  # Ajouter le score pour la classe c
+            
+        return scores
     
-    def score(self,x):
-        """ rend le score de prédiction sur x (valeur réelle)
-            x: une description
-        """
-        return {c: model.score(x) for c, model in self.models.items()}  # Calculer le score du classifieur pour la classe c
-        
-        
     def predict(self, x):
-        """ rend la prediction sur x (soit -1 ou soit +1)
-            x: une description
-        """
-        return max(self.models.keys(), key=lambda c: self.models[c].score(x))  # Retourner la classe ayant le score maximal
+        """ Retourne la classe avec le score maximal """
+        scores = self.score(x)  # Obtenir les scores pour chaque classe
+        return max(scores, key=scores.get)  # Retourner la classe avec le score maximal
+
+    def accuracy(self, X, y):
+        """ Calcul de l'exactitude sur un ensemble de données X avec les labels y """
+        predictions = np.array([self.predict(x) for x in X])
+        correct_predictions = np.sum(predictions == y)
+        return correct_predictions / len(y)
 
 class NoeudCategoriel:
     """ Classe pour représenter des noeuds d'un arbre de décision
