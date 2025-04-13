@@ -32,7 +32,7 @@ def plot_combined(df, label, color):
                 whiskerprops=dict(color=color),
                 capprops=dict(color=color),
                 flierprops=dict(markerfacecolor=color, marker='o', alpha=0.2, markersize=3))
-    
+
     avg_per_trial = df.groupby('trial')['best_so_far'].mean()
     plt.plot(trials, avg_per_trial, label=label + ' (moyenne)', color=color, linewidth=2)
 
@@ -40,10 +40,14 @@ plt.figure(figsize=(14, 6))
 plot_combined(random_data, 'Recherche aléatoire', color='blue')
 plot_combined(genetic_data, 'Algorithme génétique', color='green')
 
-plt.xlabel('Évaluations')
+plt.xlabel('Évaluations (échelle fois 50)')
 plt.ylabel('Score du meilleur individu')
 plt.title('Comparaison des performances (10 essais)')
 plt.legend()
 plt.grid(True, linestyle='--', alpha=0.5)
+
+# Set x-axis ticks at specific positions
+plt.xticks(np.arange(50, 550, 50))
+
 plt.tight_layout()
 plt.show()
