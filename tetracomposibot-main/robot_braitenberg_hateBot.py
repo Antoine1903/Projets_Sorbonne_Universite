@@ -14,8 +14,8 @@ class Robot_player(Robot):
         global nb_robots
         self.robot_id = nb_robots
         nb_robots += 1
-        self.memory = 0         # 用于记录当前是否处于“逃离状态”
-        self.stuck_counter = 0  # 连续撞脸次数
+        self.memory = 0         # Indique si le robot est en mode "évasion"
+        self.stuck_counter = 0  # Compteur de détections de blocage frontal
         super().__init__(x_0, y_0, theta_0, name=name, team=team)
 
     def step(self, sensors, sensor_view=None, sensor_robot=None, sensor_team=None):
@@ -42,18 +42,18 @@ class Robot_player(Robot):
             print("\trobot's name (if relevant)      =", sensor_robot)
             print("\trobot's team (if relevant)      =", sensor_team)
 
-        # === 卡住检测：前方机器人太近就开始累计 ===
+        # === Détection de blocage : si un robot est trop proche devant, incrémenter le compteur ===
         if sensor_to_robot[sensor_front] < 0.3:
             self.stuck_counter += 1
         else:
             self.stuck_counter = max(0, self.stuck_counter - 1)
 
-        # === 如果多步都卡住，短暂进入“逃离状态” ===
+        # === Si le robot est bloqué plusieurs fois, entrer temporairement en mode "évasion" ===
         if self.stuck_counter > 5:
-            self.memory = 10  # 未来10帧执行逃离策略
+            self.memory = 10  # Les 10 prochaines itérations appliqueront une stratégie d’évasion
             self.stuck_counter = 0
 
-        # === 正常追踪机器人行为 ===
+        # === Comportement par défaut : poursuite du robot devant ===
         if self.memory == 0:
             translation = sensor_to_robot[sensor_front]
             rotation = (
@@ -61,12 +61,12 @@ class Robot_player(Robot):
                 (1) * sensor_to_robot[sensor_front_right]
             )
         else:
-            # === 逃离策略：转弯 & 后退，避免头对头死锁 ===
+            # === Mode évasion : marche arrière + rotation aléatoire pour sortir du blocage ===
             translation = -0.3
-            rotation = random.choice([-0.8, 0.8])  # 随机左或右强转
+            rotation = random.choice([-0.8, 0.8])  # Choisit aléatoirement de tourner à gauche ou à droite
             self.memory -= 1
 
-        # 限制动作范围
+        # Limite les valeurs de translation et rotation
         translation = max(-1, min(translation, 1))
         rotation = max(-1, min(rotation, 1))
 
