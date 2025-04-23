@@ -85,4 +85,3 @@ class Robot_player(Robot):
         # --- Couche 3 : comportement par défaut si rien détecté
         # Si rien n'est détecté, avancer droit
         return 1, 0, False
-
