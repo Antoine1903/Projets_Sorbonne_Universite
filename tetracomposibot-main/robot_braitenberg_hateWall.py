@@ -14,8 +14,8 @@ class Robot_player(Robot):
         global nb_robots
         self.robot_id = nb_robots
         nb_robots += 1
-        self.memory = random.randint(0, 1)  # 初始偏好方向：0 = 左偏, 1 = 右偏
-        self.stuck_counter = 0
+        self.memory = random.randint(0, 1)  # Direction préférée initiale : 0 = gauche, 1 = droite
+        self.stuck_counter = 0              # Compteur pour détecter les blocages face au mur
         super().__init__(x_0, y_0, theta_0, name=name, team=team)
 
     def step(self, sensors, sensor_view=None, sensor_robot=None, sensor_team=None):
@@ -40,18 +40,18 @@ class Robot_player(Robot):
             print("\trobot's name (if relevant)      =", sensor_robot)
             print("\trobot's team (if relevant)      =", sensor_team)
 
-        # 检测是否正前方卡墙（或太接近）
+        # Détection de mur en face (ou trop proche)
         if sensor_to_wall[sensor_front] < 0.3:
             self.stuck_counter += 1
         else:
             self.stuck_counter = 0
 
-        # 如果连续多帧都卡住，切换偏好方向
+        # Si bloqué plusieurs étapes de suite, changer de direction préférée
         if self.stuck_counter > 5:
-            self.memory = 1 - self.memory  # 左右切换
+            self.memory = 1 - self.memory  # Alterner entre gauche et droite
             self.stuck_counter = 0
 
-        # 计算 rotation（左右避障）+ memory 影响（偏向某边）
+        # Calcul de la rotation (éviter les murs à gauche/droite) + influence de la mémoire
         rotation_weight = 1.5
         rotation = (
             (-rotation_weight) * (1.0 - sensor_to_wall[sensor_front_left]) +
@@ -59,22 +59,22 @@ class Robot_player(Robot):
         )
 
         if self.memory == 0:
-            rotation -= 0.3  # 偏左
+            rotation -= 0.3  # Biais vers la gauche
         else:
-            rotation += 0.3  # 偏右
+            rotation += 0.3  # Biais vers la droite
 
-        # translation 越靠近墙越慢
+        # Translation : plus le robot est proche d’un mur, plus il ralentit
         translation = (
             0.6 * sensor_to_wall[sensor_front] +
             0.2 * sensor_to_wall[sensor_front_left] +
             0.2 * sensor_to_wall[sensor_front_right]
         )
 
-        # 加点小随机性避免卡角落
+        # Ajouter une légère part de hasard pour éviter de rester coincé
         if random.random() < 0.05:
             rotation += (random.random() - 0.5) * 0.3
 
-        # 限制值范围
+        # Limiter les valeurs dans l’intervalle [-1, 1]
         translation = max(-1, min(translation, 1))
         rotation = max(-1, min(rotation, 1))
 
