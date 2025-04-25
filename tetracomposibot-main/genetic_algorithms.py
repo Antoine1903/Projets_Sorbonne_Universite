@@ -67,6 +67,7 @@ class Robot_player(Robot):
         if self.replay_mode and self.iteration % 1000 == 0:
             print("\n[REPLAY MODE] Resetting position at step", self.iteration)
             self.reset()
+            self.iteration += 1
             return 0, 0, True
 
         if not self.replay_mode and self.iteration % self.it_per_evaluation == 0:
@@ -93,7 +94,6 @@ class Robot_player(Robot):
                     print(">>> New best strategy found!")
                     print(">>> Best score =", self.best_score)
 
-                # ✅ 修改后的写入逻辑：trial=0 时清空文件，其它情况追加
                 mode = 'w' if self.trial == 0 else 'a'
                 with open('genetic_algorithm_results.csv', mode, newline='') as file:
                     writer = csv.writer(file)
