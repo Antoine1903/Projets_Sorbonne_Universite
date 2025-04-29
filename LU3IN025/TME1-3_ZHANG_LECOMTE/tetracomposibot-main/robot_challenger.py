@@ -34,31 +34,20 @@ class Robot_player(Robot):
         sensor_to_wall = [1.0 if sensor_view[i] != 1 else sensors[i] for i in range(8)]
         sensor_to_robot = [1.0 if sensor_view[i] != 2 else sensors[i] for i in range(8)]
 
-        # --- Couche 1 : éviter les murs (prioritaire)
-        if (sensor_to_wall[sensor_front] != 1 or 
-            sensor_to_wall[sensor_front_left] != 1 or 
-            sensor_to_wall[sensor_front_right] != 1):
-            
-            # Si on détecte un mur devant, tourner pour l'éviter
+        # Couche 1 : éviter les murs (prioritaire)
+        if any(sensor_to_wall[i] != 1.0 for i in range(8)):
             return robot_braitenberg_hateWall.Robot_player.step(
                 self, sensors, sensor_view, sensor_robot, sensor_team)
 
-        # --- Couche 2 : gestion des robots (alliés ou ennemis)
-        if (sensor_to_robot[sensor_front] != 1 or 
-            sensor_to_robot[sensor_front_left] != 1 or 
-            sensor_to_robot[sensor_front_right] != 1):
-
-            # Si un allié est détecté devant, on utilise le comportement "hateBot"
-            if (sensor_team[sensor_front] == self.team or 
-                sensor_team[sensor_front_left] == self.team or 
-                sensor_team[sensor_front_right] == self.team):
+        # Couche 2 : interaction avec les robots (alliés ou ennemis)
+        if any(sensor_to_robot[i] != 1.0 for i in range(8)):
+            if any(sensor_team[i] == self.team for i in range(8) if sensor_team[i] is not None):
                 return robot_braitenberg_hateBot.Robot_player.step(
                     self, sensors, sensor_view, sensor_robot, sensor_team)
-            
-            # Sinon, on attaque l'ennemi avec le comportement "loveBot"
             else:
                 return robot_braitenberg_loveBot.Robot_player.step(
                     self, sensors, sensor_view, sensor_robot, sensor_team)
+
 
         # --- Couche 3 : comportement par défaut si rien détecté
         # Si rien n'est détecté, avancer droit
