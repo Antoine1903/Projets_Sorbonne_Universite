@@ -41,7 +41,10 @@ class Robot_player(Robot):
                 print ("\trobot's team (if relevant)      =",sensor_team)
 
         translation = 1
-        rotation = 1 * sensor_to_robot[sensor_front_left] - 1 * sensor_to_robot[sensor_front_right]
+        rotation = (-1) * sensor_to_robot[sensor_front_left] + \
+                    sensor_to_robot[sensor_front_right] + \
+                    (-1) * sensor_to_robot[sensor_left] + \
+                    sensor_to_robot[sensor_right]
 
         translation = max(-1,min(translation,1))
         rotation = max(-1, min(rotation, 1))
