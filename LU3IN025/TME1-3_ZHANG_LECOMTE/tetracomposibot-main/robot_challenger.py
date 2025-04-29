@@ -26,19 +26,7 @@ class Robot_player(Robot):
 
         super().__init__(x_0, y_0, theta_0, name="Robot "+str(self.robot_id), team=self.team_name)
 
-        if self.robot_id == 3:
-            self.genetic_bot = genetic_algorithms.Robot_player(
-                x_0, y_0, theta_0,
-                name="GeneticBot", team=self.team_name
-            )
-            self.genetic_bot.replay_mode = True
-        else:
-            self.genetic_bot = None
-
     def step(self, sensors, sensor_view=None, sensor_robot=None, sensor_team=None):
-        if self.robot_id == 3:
-            return self.genetic_bot.step(sensors, sensor_view, sensor_robot, sensor_team)
-
         if sensor_view is None:
             sensor_view = [0] * 8
 
