@@ -14,7 +14,7 @@ nb_robots = 0
 
 class Robot_player(Robot):
 
-    team_name = "Challenger"  # vous pouvez modifier le nom de votre équipe
+    team_name = "Yutoine"  # vous pouvez modifier le nom de votre équipe
     robot_id = -1             # ne pas modifier. Permet de connaitre le numéro de votre robot.
     memory = 0                # vous n'avez le droit qu'a une case mémoire qui doit être obligatoirement un entier
     iteration = 0

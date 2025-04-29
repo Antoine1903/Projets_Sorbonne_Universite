@@ -51,7 +51,14 @@ class Robot_player(Robot):
             
             sensor_to_robot[sensor_front_left] * (1) +    
             sensor_to_robot[sensor_left] * (1) +         
-            sensor_to_robot[sensor_rear_left] * (1)
+            sensor_to_robot[sensor_rear_left] * (1) +
+
+            sensor_to_robot[sensor_front] * (0.9) +
+            sensor_to_robot[sensor_rear] * (-0.1)
         )
+
+        translation = max(-1,min(translation,1))
+        rotation = max(-1, min(rotation, 1))
+
         self.iteration = self.iteration + 1        
         return translation, rotation, False
