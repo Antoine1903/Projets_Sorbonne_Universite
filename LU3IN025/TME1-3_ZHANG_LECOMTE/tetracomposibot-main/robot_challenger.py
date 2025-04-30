@@ -9,6 +9,7 @@
 
 from robot import *
 import math
+import random
 
 nb_robots = 0
 
@@ -47,8 +48,8 @@ class Robot_player(Robot):
                 sensor_to_wall[sensor_left] * (1) +         
                 sensor_to_wall[sensor_rear_left] * (1) +
 
-                sensor_to_wall[sensor_front] * (1) +
-                sensor_to_wall[sensor_rear] * (-1) 
+                sensor_to_wall[sensor_front] * random.randint(-1,1) +
+                sensor_to_wall[sensor_rear] * random.randint(-1,1)
             )
 
             translation = max(-1, min(translation, 1))
@@ -72,8 +73,8 @@ class Robot_player(Robot):
                     sensor_to_robot[sensor_left] * (1) +         
                     sensor_to_robot[sensor_rear_left] * (1) +
 
-                    sensor_to_robot[sensor_front] * (1) +
-                    sensor_to_robot[sensor_rear] * (-1) 
+                    sensor_to_robot[sensor_front] * random.randint(-1,1) +
+                    sensor_to_robot[sensor_rear] * random.randint(-1,1) 
                 )
 
                 translation = max(-1, min(translation, 1))
@@ -82,7 +83,7 @@ class Robot_player(Robot):
 
             # Comportement "loveBot" (suivre les robots ennemis)
             else:
-                translation = 1
+                translation = sensor_to_robot[sensor_front]
                 rotation = (
                     sensor_to_robot[sensor_front_right] * (1) +  
                     sensor_to_robot[sensor_right] * (1) +        
@@ -90,10 +91,7 @@ class Robot_player(Robot):
                     
                     sensor_to_robot[sensor_front_left] * (-1) +    
                     sensor_to_robot[sensor_left] * (-1) +         
-                    sensor_to_robot[sensor_rear_left] * (-1) +
-
-                    sensor_to_robot[sensor_front] * (1) +
-                    sensor_to_robot[sensor_rear] * (-1) 
+                    sensor_to_robot[sensor_rear_left] * (-1)
                 )
                                 
                 translation = max(-1, min(translation, 1))
