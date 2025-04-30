@@ -36,7 +36,7 @@ class Robot_player(Robot):
 
         # --- Couche 1 : éviter les murs (Comportement "hateWall") ---
         if any(sensor_to_wall[i] != 1.0 for i in range(8)):  # Si un mur est détecté
-            translation = sensor_to_wall[sensor_front]# Aller en avant ou en arrière selon le mur
+            translation = sensor_to_wall[sensor_front]
 
             rotation = (
                 sensor_to_wall[sensor_front_right] * (-1) +  
@@ -56,7 +56,7 @@ class Robot_player(Robot):
             return translation, rotation, False
 
         # --- Couche 2 : interaction avec les robots (alliés ou ennemis) ---
-        # Vérifier si un robot est détecté avec les capteurs avant uniquement
+        # Vérifier si un robot est détecté
         if any(sensor_to_robot[i] != 1.0 for i in range(8)):
             if any(sensor_team[i] == "Yutoine" for i in range(8) if sensor_team[i] is not None):
             # Comportement "hateBot" (fuir les robots alliés)
@@ -106,4 +106,3 @@ class Robot_player(Robot):
 
         self.iteration += 1
         return translation, rotation, False
-
