@@ -46,10 +46,10 @@ class Robot_player(Robot):
 
         # Initialize GA parameters with biased start
         self.param = [
-            random.choice([0.8, 1.0]),  # Front weight (positive)
-            random.choice([-0.5, 0, 0.5]),  # Front-left
-            random.choice([-0.5, 0, 0.5]),  # Front-right
-            random.choice([-1, 0, 1]),  # Rotation params
+            random.choice([-1, 0, 1]),  # Front weight (positive)
+            random.choice([-1, 0, 1]),  # Front-left
+            random.choice([-1, 0, 1]),  # Front-right
+            random.choice([-1, 0, 1]),
             random.choice([-1, 0, 1]),
             random.choice([-1, 0, 1]),
             random.choice([-1, 0, 1]),
