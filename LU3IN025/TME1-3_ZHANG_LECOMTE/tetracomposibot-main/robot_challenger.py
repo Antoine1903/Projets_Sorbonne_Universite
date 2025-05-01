@@ -1,6 +1,6 @@
 # Projet "robotique" IA&Jeux 2025
 #
-# Binome:
+# Binôme :
 #  Prénom Nom No_étudiant/e : Antoine Lecomte 21103457
 #  Prénom Nom No_étudiant/e : Yuxiang Zhang 21202829
 
@@ -18,7 +18,7 @@ class Robot_player(Robot):
     memory = 0
     iteration = 0
 
-    # Genetic Algorithm parameters (only for robot 0)
+    # Paramètres de l’algorithme génétique (seulement pour le robot 1)
     param = []
     bestParam = []
     best_score = -float('inf')
@@ -32,7 +32,7 @@ class Robot_player(Robot):
     trial = 0
     subtrial = 0
 
-    # Coverage tracking (only for robot 0)
+    # Suivi de couverture (seulement pour le robot 1)
     visited_cells = set()
     cell_size = 0.5
     log_sum_of_translation = 0
@@ -44,7 +44,7 @@ class Robot_player(Robot):
         self.robot_id = nb_robots
         nb_robots += 1
 
-        # Only initialize GA for robot 1
+        # Initialise l’algorithme génétique uniquement pour le robot 1
         if self.robot_id == 1:
             self.param = [
                 random.choice([-1, 0, 1]),
@@ -75,7 +75,7 @@ class Robot_player(Robot):
             self.last_position = (self.x, self.y)
         super().reset()
 
-    # ===== GA Functions (only for robot 1) =====
+    # ===== Fonctions GA (seulement pour le robot 1) =====
     def update_coverage(self, x, y):
         if self.robot_id == 1:
             cell_x = int(x / self.cell_size)
@@ -99,9 +99,9 @@ class Robot_player(Robot):
     
     def evaluate_params(self, params):
         if self.robot_id == 1:
-            coverage = self.calculate_coverage_score()
-            efficiency = 1 - abs(self.log_sum_of_rotation/self.it_per_evaluation)
-            return coverage * 0.9 + efficiency * 0.1
+            couverture = self.calculate_coverage_score()
+            efficacite = 1 - abs(self.log_sum_of_rotation/self.it_per_evaluation)
+            return couverture * 0.9 + efficacite * 0.1
         return 0
 
     def selection(self, population):
@@ -109,12 +109,12 @@ class Robot_player(Robot):
         evaluated.sort(key=lambda x: -x[1])
         return [x[0] for x in evaluated[:5]]
 
-    # ===== Main Step Function =====
+    # ===== Fonction principale =====
     def step(self, sensors, sensor_view=None, sensor_robot=None, sensor_team=None):
         if sensor_view is None:
             sensor_view = [0] * 8
 
-        # Only robot 0 does GA and coverage tracking
+        # Seulement pour le robot 1 : suivi couverture et mouvements
         if self.robot_id == 1:
             self.update_coverage(self.x, self.y)
             actual_move = math.sqrt((self.x - self.last_position[0])**2 + 
@@ -122,7 +122,7 @@ class Robot_player(Robot):
             self.log_sum_of_translation += actual_move
             self.last_position = (self.x, self.y)
 
-        # ===== GA Logic (robot 0 only) =====
+        # ===== Logique GA (robot 1 uniquement) =====
         if self.robot_id == 1 and not hasattr(self, 'replay_mode'):
             self.replay_mode = False
         
@@ -157,11 +157,11 @@ class Robot_player(Robot):
                 self.reset()
                 return 0, 0, True
 
-        # ===== Shared Behavior Layers =====
+        # ===== Comportements partagés (couches) =====
         sensor_to_wall = [1.0 if sensor_view[i] != 1 else sensors[i] for i in range(8)]
         sensor_to_robot = [1.0 if sensor_view[i] != 2 else sensors[i] for i in range(8)]
 
-        # Layer 1: Wall avoidance
+        # Couche 1 : évitement des murs
         if any(sensor_to_wall[i] != 1.0 for i in range(8)):
             translation = sensor_to_wall[sensor_front]
             rotation = (
@@ -176,10 +176,10 @@ class Robot_player(Robot):
             )
             return self.normalize_output(translation, rotation)
 
-        # Layer 2: Robot interaction
+        # Couche 2 : interaction entre robots
         if any(sensor_to_robot[i] != 1.0 for i in range(8)):
             if any(sensor_team[i] == "Yutoine" for i in range(8) if sensor_team[i] is not None):
-                # Avoid teammates
+                # Éviter les coéquipiers
                 translation = sensor_to_robot[sensor_front]
                 rotation = (
                     sensor_to_robot[sensor_front_right] * (-1) +  
@@ -192,7 +192,7 @@ class Robot_player(Robot):
                     sensor_to_robot[sensor_rear] * random.randint(-1,1) 
                 )
             else:
-                # Chase enemies
+                # Pourchasser les ennemis
                 translation = sensor_to_robot[sensor_front]
                 rotation = (
                     sensor_to_robot[sensor_front_right] * (1) +  
@@ -204,9 +204,9 @@ class Robot_player(Robot):
                 )
             return self.normalize_output(translation, rotation)
 
-        # Layer 3: Default behavior
+        # Couche 3 : comportement par défaut
         if self.robot_id == 1 and hasattr(self, 'replay_mode') and self.replay_mode:
-            # Robot 1 in replay mode uses GA-optimized params
+            # Robot 1 en mode replay utilise les paramètres GA optimisés
             translation = math.tanh(
                 self.param[0] +
                 self.param[1] * sensors[sensor_front_left] +
@@ -220,7 +220,7 @@ class Robot_player(Robot):
                 self.param[7] * sensors[sensor_front_right]
             )
         else:
-            # All other robots use simple forward motion
+            # Tous les autres robots avancent simplement tout droit
             translation = 1
             rotation = 0
         
@@ -230,7 +230,7 @@ class Robot_player(Robot):
         translation = max(-1, min(1, translation))
         rotation = max(-1, min(1, rotation))
         
-        if self.robot_id == 0:
+        if self.robot_id == 1:
             self.log_sum_of_rotation += abs(rotation)
         
         self.iteration += 1
