@@ -3,9 +3,6 @@
 # Binome:
 #  Prénom Nom No_étudiant/e : Antoine Lecomte 21103457
 #  Prénom Nom No_étudiant/e : Yuxiang Zhang 21202829
-#
-# check robot.py for sensor naming convention
-# all sensor and motor value are normalized (from 0.0 to 1.0 for sensors, -1.0 to +1.0 for motors)
 
 from robot import *
 import math
@@ -15,229 +12,191 @@ import csv
 nb_robots = 0
 debug = False
 
-iteration_global = 0
-iteration_robs = [0] * 8    # indique les nombres de fois d'enregistrements de mouvements pour chaque robot (valeur entre [0, 4])
-score_individual = [[0, 0, 0, 0] for _ in range(8)]
-lst_individual = [[] for _ in range(8)]  # {[(translation, rotation), (..), .. *5 = enregistrer le mouvement de robotId=0], [...], ...*8 = nb de robots par équipe}
-population = []
-flag_initial = False
-lst_flag = [False] * 8
-
 class Robot_player(Robot):
-
-    team_name = "Yutoine"  # nom de l'équipe
-    robot_id = -1          # Identifiant du robot
-    memory = 0             # Mémoire (entier)
+    team_name = "Yutoine"
+    robot_id = -1
+    memory = 0
     iteration = 0
-    replay_mode = False
+
+    # Genetic Algorithm parameters
+    param = []
+    bestParam = []
+    best_score = -float('inf')
+    current_score = 0
+    bestTrial = -1
+    total_score = 0
+
+    evaluations = 200
+    it_per_evaluation = 300
+    subtrial_per_evaluation = 3
+    trial = 0
+    subtrial = 0
+
+    # Coverage tracking
+    visited_cells = set()
+    cell_size = 0.5
+    log_sum_of_translation = 0
+    log_sum_of_rotation = 0
 
     def __init__(self, x_0, y_0, theta_0, name="n/a", team="n/a"):
         global nb_robots
         self.robot_id = nb_robots
         nb_robots += 1
 
-        self.mu = 5
-        self.lambda_ = 20
-        self.population = [[random.uniform(-1, 1) for _ in range(8)] for _ in range(self.mu)]
-        self.fitnesses = [0 for _ in range(self.mu)]
-        self.current_candidate = 0
-        self.param = self.population[0]
+        # Initialize GA parameters
+        self.param = [random.uniform(-1, 1) for _ in range(8)]
         self.bestParam = self.param.copy()
-        self.best_score = -float('inf')
-        self.bestTrial = -1
-
-        self.evaluations = 500
-        self.it_per_evaluation = 400
-        self.subtrial_per_evaluation = 3
-        self.trial = 0
+        
+        # Initialize position tracking
+        self.x_0 = x_0
+        self.y_0 = y_0
+        self.theta_0 = theta_0
+        self.visited_cells = set()
         self.total_score = 0
-        self.subtrial = 0
-
-        self.coverage_grid_size = 20
-        self.coverage_grid = set()
-
+        
         super().__init__(x_0, y_0, theta_0, name="Robot "+str(self.robot_id), team=self.team_name)
 
     def reset(self):
+        """Reset robot position and tracking metrics"""
         self.theta = random.uniform(0, 2 * math.pi)
+        self.log_sum_of_translation = 0
+        self.log_sum_of_rotation = 0
         super().reset()
-        self.memory = 0  # Réinitialiser la mémoire à chaque reset
+
+    def update_coverage(self, x, y):
+        """Track visited cells for coverage calculation"""
+        cell_x = int(x / self.cell_size)
+        cell_y = int(y / self.cell_size)
+        self.visited_cells.add((cell_x, cell_y))
+
+    def calculate_coverage_score(self):
+        """Calculate normalized coverage score"""
+        max_cells = (20 / self.cell_size) * (20 / self.cell_size)
+        return len(self.visited_cells) / max_cells
 
     def mutate(self, params):
         child = params.copy()
-        for i in range(len(child)):
-            if random.random() < 0.3:  # Taux de mutation plus élevé
-                child[i] = random.uniform(-1, 1)
+        i = random.randint(0, len(child) - 1)
+        original_value = child[i]
+        new_value = random.choice([-1, 0, 1])
+        while new_value == original_value:
+            new_value = random.choice([-1, 0, 1])
+        child[i] = new_value
         return child
 
-    def selection(self, mu, lambda_, population, fitnesses):
-        sorted_population = sorted(zip(population, fitnesses), key=lambda x: x[1], reverse=True)
-        parents = [ind for ind, _ in sorted_population[:mu]]
-        children = []
-        for _ in range(lambda_):
-            parent = random.choice(parents)
-            child = self.mutate(parent)
-            children.append(child)
-        return parents + children
-
-    def score(self, param):
-        # Simuler le robot avec les paramètres donnés et calculer la couverture
-        coverage_score = 0
-        for _ in range(self.it_per_evaluation):
-            translation = math.tanh(
-                param[0] +
-                param[1] * random.random() +
-                param[2] * random.random() +
-                param[3] * random.random()
-            )
-            rotation = math.tanh(
-                param[4] +
-                param[5] * random.random() +
-                param[6] * random.random() +
-                param[7] * random.random()
-            )
-            coverage_score += translation * (1 - abs(rotation))
-        return coverage_score
-
     def step(self, sensors, sensor_view=None, sensor_robot=None, sensor_team=None):
-        global iteration_robs, lst_individual, iteration_global, population, flag_initial, lst_flag
-
         if sensor_view is None:
             sensor_view = [0] * 8
 
-        # Analyse des capteurs
-        sensor_to_wall = [1.0 if sensor_view[i] != 1 else sensors[i] for i in range(8)]
-        sensor_to_robot = [1.0 if sensor_view[i] != 2 else sensors[i] for i in range(8)]
+        # Update coverage tracking
+        self.update_coverage(self.x, self.y)
 
-        # --- Couche 1 : éviter les murs (Comportement "hateWall") ---
-        if any(sensor_to_wall[i] != 1.0 for i in range(8)):  # Si un mur est détecté
-            translation = sensor_to_wall[sensor_front]
-            rotation = (
-                sensor_to_wall[sensor_front_right] * (-1) +
-                sensor_to_wall[sensor_right] * (-1) +
-                sensor_to_wall[sensor_rear_right] * (-1) +
-                sensor_to_wall[sensor_front_left] * (1) +
-                sensor_to_wall[sensor_left] * (1) +
-                sensor_to_wall[sensor_rear_left] * (1) +
-                sensor_to_wall[sensor_front] * random.randint(-1,1) +
-                sensor_to_wall[sensor_rear] * random.randint(-1,1)
-            )
-            translation = max(-1, min(translation, 1))
-            rotation = max(-1, min(rotation, 1))
-            return translation, rotation, False
-
-        # --- Couche 2 : interaction avec les robots (alliés ou ennemis) ---
-        if any(sensor_to_robot[i] != 1.0 for i in range(8)):
-            if any(sensor_team[i] == "Yutoine" for i in range(8) if sensor_team[i] is not None):
-                # Comportement "hateBot" (fuir les robots alliés)
-                translation = sensor_to_robot[sensor_front]
-                rotation = (
-                    sensor_to_robot[sensor_front_right] * (-1) +
-                    sensor_to_robot[sensor_right] * (-1) +
-                    sensor_to_robot[sensor_rear_right] * (-1) +
-                    sensor_to_robot[sensor_front_left] * (1) +
-                    sensor_to_robot[sensor_left] * (1) +
-                    sensor_to_robot[sensor_rear_left] * (1) +
-                    sensor_to_robot[sensor_front] * random.randint(-1,1) +
-                    sensor_to_robot[sensor_rear] * random.randint(-1,1) 
-                )
-                translation = max(-1, min(translation, 1))
-                rotation = max(-1, min(rotation, 1))
-                return translation, rotation, False
-            else:
-                # Comportement "loveBot" (suivre les robots ennemis)
-                translation = 1
-                rotation = (
-                    sensor_to_robot[sensor_front_right] * (1) +
-                    sensor_to_robot[sensor_right] * (1) +
-                    sensor_to_robot[sensor_rear_right] * (1) +
-                    sensor_to_robot[sensor_front_left] * (-1) +
-                    sensor_to_robot[sensor_left] * (-1) +
-                    sensor_to_robot[sensor_rear_left] * (-1)
-                )
-                translation = max(-1, min(translation, 1))
-                rotation = max(-1, min(rotation, 1))
-                return translation, rotation, False
-
-        # --- Couche 3 : algorithme génétique ---
-        if not self.replay_mode and self.iteration % self.it_per_evaluation == 0:
-            if self.iteration > 0:
-                coverage_score = len(self.coverage_grid)
-                trial_score = coverage_score
-                self.total_score += trial_score
-
-                print(f"\n[Trial {self.trial} - Subtrial {self.subtrial}/{self.subtrial_per_evaluation}] Score: {trial_score}")
-                print("\tCouverture =", coverage_score)
-
+        if not hasattr(self, 'replay_mode'):
+            self.replay_mode = False
+        
+        # GA evaluation logic
+        if not self.replay_mode and self.iteration % self.it_per_evaluation == 0 and self.iteration > 0:
+            coverage_score = self.calculate_coverage_score()
+            efficiency_score = self.log_sum_of_translation * (1 - abs(self.log_sum_of_rotation/self.it_per_evaluation))
+            total_score = 0.7 * coverage_score + 0.3 * efficiency_score
+            
+            self.total_score += total_score
             self.subtrial += 1
-            self.coverage_grid.clear()
 
             if self.subtrial == self.subtrial_per_evaluation:
-                print(f"\n>>> Trial {self.trial}/{self.evaluations} completed: Total score = {self.total_score}")
-                print(f"    Params: {self.param}")
-
                 if self.total_score > self.best_score:
                     self.best_score = self.total_score
                     self.bestParam = self.param.copy()
-                    self.bestTrial = self.trial
-                    print(">>> New best strategy found!")
-                    print(">>> Best score =", self.best_score)
-
-                mode = 'w' if self.trial == 0 else 'a'
-                with open('genetic_algorithm_results.csv', mode, newline='') as file:
-                    writer = csv.writer(file)
+                
+                candidates = [self.mutate(self.bestParam) for _ in range(5)] + [self.bestParam]
+                self.param = max(candidates, key=lambda p: self.evaluate_params(p))
+                
+                with open('ga_results.csv', 'a') as f:
+                    writer = csv.writer(f)
                     writer.writerow([self.trial, self.total_score, self.best_score] + self.bestParam)
-                    file.flush()
-
-                self.fitnesses[self.current_candidate] = self.total_score
+                
                 self.trial += 1
                 self.total_score = 0
                 self.subtrial = 0
-
+                
                 if self.trial >= self.evaluations:
-                    print("\n[INFO] All evaluations done. Entering replay mode.")
-                    print(">>> FINAL BEST STRATEGY from trial", self.bestTrial)
-                    print(">>> Parameters:", self.bestParam)
-                    print(">>> Score:", self.best_score)
-                    self.param = self.bestParam.copy()
+                    print(f"Optimization complete. Best score: {self.best_score}")
+                    print(f"Best params: {self.bestParam}")
                     self.replay_mode = True
-                else:
-                    if self.trial % self.lambda_ == 0:
-                        self.population = self.selection(self.mu, self.lambda_, self.population, self.fitnesses)
-                        self.fitnesses = [0 for _ in range(self.mu)] + [0 for _ in range(self.lambda_)]
-                        print(f"[GENERATION {self.trial // self.lambda_}] Nouvelle population sélectionnée")
+                    self.param = self.bestParam.copy()
+                
+                self.reset()
+                return 0, 0, True
 
-                    self.current_candidate = (self.trial % (self.mu + self.lambda_)) % len(self.population)
-                    self.param = self.population[self.current_candidate]
-                    print("\nTrying new strategy, trial", self.trial)
+        # Sensor processing with correct indices
+        sensor_to_wall = [1.0 if sensor_view[i] != 1 else sensors[i] for i in range(8)]
+        sensor_to_robot = [1.0 if sensor_view[i] != 2 else sensors[i] for i in range(8)]
 
-            self.reset()
-            self.iteration += 1
-            return 0, 0, True
+        # Layer 1: Wall avoidance (GA-optimized)
+        if any(sensor_to_wall[i] != 1.0 for i in range(8)):
+            translation = self.param[0] * sensor_to_wall[sensor_front]  # Index 0
+            
+            # Using all 8 sensors for wall avoidance with GA parameters
+            rotation = (
+                self.param[0] * sensor_to_wall[sensor_front] +        # 0
+                self.param[1] * sensor_to_wall[sensor_front_left] +   # 1
+                self.param[2] * sensor_to_wall[sensor_left] +         # 2
+                self.param[3] * sensor_to_wall[sensor_rear_left] +    # 3
+                self.param[4] * sensor_to_wall[sensor_rear] +         # 4
+                self.param[5] * sensor_to_wall[sensor_rear_right] +   # 5
+                self.param[6] * sensor_to_wall[sensor_right] +        # 6
+                self.param[7] * sensor_to_wall[sensor_front_right]    # 7
+            )
+            translation = max(-1,min(translation,1))
+            rotation = max(-1, min(rotation, 1))
+            return self.normalize_output(translation, rotation)
 
-        cell_x = int(self.x * self.coverage_grid_size)
-        cell_y = int(self.y * self.coverage_grid_size)
-        self.coverage_grid.add((cell_x, cell_y))
+        # Layer 2: Robot interaction
+        if any(sensor_to_robot[i] != 1.0 for i in range(8)):
+            if any(sensor_team[i] == "Yutoine" for i in range(8) if sensor_team[i] is not None):
+                # Avoid teammates
+                translation = sensor_to_robot[sensor_front]
+                rotation = (
+                    sensor_to_robot[sensor_front_left] * -1.0 +   
+                    sensor_to_robot[sensor_left] * -1.0 +        
+                    sensor_to_robot[sensor_rear_left] * -1.0 +    
+                    sensor_to_robot[sensor_front_right] * 1.0 +   
+                    sensor_to_robot[sensor_right] * 1.0 +        
+                    sensor_to_robot[sensor_rear_right] * 1.0   
+                )
+                translation = max(-1,min(translation,1))
+                rotation = max(-1, min(rotation, 1))
+                return self.normalize_output(translation, rotation)
+            else:
+                # Chase enemies
+                translation = sensor_to_robot[sensor_front]
+                rotation = (
+                    sensor_to_robot[sensor_front_right] * 1.0 +  
+                    sensor_to_robot[sensor_right] * 1.0 +         
+                    sensor_to_robot[sensor_rear_right] * 1.0 +    
+                    sensor_to_robot[sensor_front_left] * -1.0 +   
+                    sensor_to_robot[sensor_left] * -1.0 +         
+                    sensor_to_robot[sensor_rear_left] * -1.0      
+                )
+                translation = max(-1,min(translation,1))
+                rotation = max(-1, min(rotation, 1))
+                return self.normalize_output(translation, rotation)
 
-        translation = math.tanh(
-            self.param[0] +
-            self.param[1] * sensors[sensor_front_left] +
-            self.param[2] * sensors[sensor_front] +
-            self.param[3] * sensors[sensor_front_right]
-        )
+        # Layer 3: Default behavior - straight forward
+        return self.normalize_output(1, 0)  # Full speed forward, no rotation
 
-        rotation = math.tanh(
-            self.param[4] +
-            self.param[5] * sensors[sensor_front_left] +
-            self.param[6] * sensors[sensor_front] +
-            self.param[7] * sensors[sensor_front_right]
-        )
-
+    def normalize_output(self, translation, rotation):
+        """Clip and log movement values"""
+        translation = max(-1, min(1, translation))
+        rotation = max(-1, min(1, rotation))
+        
+        self.log_sum_of_translation += translation
+        self.log_sum_of_rotation += rotation
         self.iteration += 1
-
-        if debug and self.iteration % 100 == 0:
-            print("Robot", self.robot_id, "(team", self.team_name + ")", "at step", self.iteration)
-            print("\tsensors =", sensors)
-            print("\ttranslation =", translation, "; rotation =", rotation)
-
         return translation, rotation, False
+
+    def evaluate_params(self, params):
+        """Evaluate parameters based on coverage and efficiency"""
+        coverage = sum(abs(p) for p in params[:5])
+        interaction = sum(abs(p) for p in params[5:])
+        return coverage * 0.6 + interaction * 0.4
