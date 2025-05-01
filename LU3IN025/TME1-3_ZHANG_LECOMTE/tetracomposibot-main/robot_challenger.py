@@ -44,8 +44,8 @@ class Robot_player(Robot):
         self.robot_id = nb_robots
         nb_robots += 1
 
-        # Only initialize GA for robot 0
-        if self.robot_id == 0:
+        # Only initialize GA for robot 1
+        if self.robot_id == 1:
             self.param = [
                 random.choice([-1, 0, 1]),
                 random.choice([-1, 0, 1]),
@@ -69,21 +69,21 @@ class Robot_player(Robot):
 
     def reset(self):
         self.theta = random.uniform(0, 2 * math.pi)
-        if self.robot_id == 0:
+        if self.robot_id == 1:
             self.log_sum_of_translation = 0
             self.log_sum_of_rotation = 0
             self.last_position = (self.x, self.y)
         super().reset()
 
-    # ===== GA Functions (only for robot 0) =====
+    # ===== GA Functions (only for robot 1) =====
     def update_coverage(self, x, y):
-        if self.robot_id == 0:
+        if self.robot_id == 1:
             cell_x = int(x / self.cell_size)
             cell_y = int(y / self.cell_size)
             self.visited_cells.add((cell_x, cell_y))
 
     def calculate_coverage_score(self):
-        if self.robot_id == 0:
+        if self.robot_id == 1:
             max_cells = (20 / self.cell_size) * (20 / self.cell_size)
             return len(self.visited_cells) / max_cells
         return 0
@@ -98,7 +98,7 @@ class Robot_player(Robot):
         return child
     
     def evaluate_params(self, params):
-        if self.robot_id == 0:
+        if self.robot_id == 1:
             coverage = self.calculate_coverage_score()
             efficiency = 1 - abs(self.log_sum_of_rotation/self.it_per_evaluation)
             return coverage * 0.9 + efficiency * 0.1
@@ -115,7 +115,7 @@ class Robot_player(Robot):
             sensor_view = [0] * 8
 
         # Only robot 0 does GA and coverage tracking
-        if self.robot_id == 0:
+        if self.robot_id == 1:
             self.update_coverage(self.x, self.y)
             actual_move = math.sqrt((self.x - self.last_position[0])**2 + 
                                    (self.y - self.last_position[1])**2)
@@ -123,10 +123,10 @@ class Robot_player(Robot):
             self.last_position = (self.x, self.y)
 
         # ===== GA Logic (robot 0 only) =====
-        if self.robot_id == 0 and not hasattr(self, 'replay_mode'):
+        if self.robot_id == 1 and not hasattr(self, 'replay_mode'):
             self.replay_mode = False
         
-        if self.robot_id == 0 and not self.replay_mode and self.iteration % self.it_per_evaluation == 0 and self.iteration > 0:
+        if self.robot_id == 1 and not self.replay_mode and self.iteration % self.it_per_evaluation == 0 and self.iteration > 0:
             total_score = self.evaluate_params(self.param)
             self.total_score += total_score
             self.subtrial += 1
@@ -205,8 +205,8 @@ class Robot_player(Robot):
             return self.normalize_output(translation, rotation)
 
         # Layer 3: Default behavior
-        if self.robot_id == 0 and hasattr(self, 'replay_mode') and self.replay_mode:
-            # Robot 0 in replay mode uses GA-optimized params
+        if self.robot_id == 1 and hasattr(self, 'replay_mode') and self.replay_mode:
+            # Robot 1 in replay mode uses GA-optimized params
             translation = math.tanh(
                 self.param[0] +
                 self.param[1] * sensors[sensor_front_left] +
