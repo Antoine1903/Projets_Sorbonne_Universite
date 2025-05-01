@@ -143,7 +143,8 @@ class Robot_player(Robot):
                 self.bestParam = next_gen[0]  # Elite preservation
                 
                 # Logging
-                with open('ga_results.csv', 'a') as f:
+                mode = 'w' if self.trial == 0 else 'a'
+                with open('ga_results.csv', mode, newline='') as f:
                     writer = csv.writer(f)
                     writer.writerow([self.trial, self.total_score, self.best_score] + self.bestParam)
                 
