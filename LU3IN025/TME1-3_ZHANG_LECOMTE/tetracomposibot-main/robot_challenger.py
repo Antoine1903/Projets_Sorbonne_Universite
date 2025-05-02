@@ -15,7 +15,7 @@ debug = False
 class Robot_player(Robot):
     team_name = "Yutoine"
     robot_id = -1
-    memory = 0
+    memory = 0  # 用于记录是否移动
     iteration = 0
 
     # Paramètres de l’algorithme génétique (seulement pour le robot 1)
@@ -58,13 +58,13 @@ class Robot_player(Robot):
             ]
             self.bestParam = self.param.copy()
             self.visited_cells = set()
-        
+
         self.x_0 = x_0
         self.y_0 = y_0
         self.theta_0 = theta_0
         self.last_position = (x_0, y_0)
         self.total_score = 0
-        
+
         super().__init__(x_0, y_0, theta_0, name="Robot "+str(self.robot_id), team=self.team_name)
 
     def reset(self):
@@ -87,7 +87,7 @@ class Robot_player(Robot):
             max_cells = (20 / self.cell_size) * (20 / self.cell_size)
             return len(self.visited_cells) / max_cells
         return 0
-    
+
     def mutate(self, params, mutation_rate=0.5):
         child = params.copy()
         for i in range(len(child)):
@@ -96,7 +96,7 @@ class Robot_player(Robot):
                 child[i] = random.choice([-1, -0.5, 0, 0.5, 1, original*1.2])
                 child[i] = max(-1, min(1, child[i]))
         return child
-    
+
     def evaluate_params(self, params):
         if self.robot_id == 1:
             couverture = self.calculate_coverage_score()
@@ -117,7 +117,7 @@ class Robot_player(Robot):
         # Seulement pour le robot 1 : suivi couverture et mouvements
         if self.robot_id == 1:
             self.update_coverage(self.x, self.y)
-            actual_move = math.sqrt((self.x - self.last_position[0])**2 + 
+            actual_move = math.sqrt((self.x - self.last_position[0])**2 +
                                    (self.y - self.last_position[1])**2)
             self.log_sum_of_translation += actual_move
             self.last_position = (self.x, self.y)
@@ -125,7 +125,7 @@ class Robot_player(Robot):
         # ===== Logique GA (robot 1 uniquement) =====
         if self.robot_id == 1 and not hasattr(self, 'replay_mode'):
             self.replay_mode = False
-        
+
         if self.robot_id == 1 and not self.replay_mode and self.iteration % self.it_per_evaluation == 0 and self.iteration > 0:
             total_score = self.evaluate_params(self.param)
             self.total_score += total_score
@@ -135,25 +135,25 @@ class Robot_player(Robot):
                 if self.total_score > self.best_score:
                     self.best_score = self.total_score
                     self.bestParam = self.param.copy()
-                
+
                 current_mutation_rate = 0.5 - 0.4*(self.trial/self.evaluations)
                 children = [self.mutate(self.bestParam, current_mutation_rate) for _ in range(20)]
                 next_gen = self.selection(children + [self.bestParam]*5)
-                
+
                 self.param = random.choice(next_gen)
                 self.bestParam = next_gen[0]
-                
+
                 if debug:
                     print(f"Gen {self.trial}: Score={self.best_score:.2f} Params={self.bestParam}")
-                
+
                 self.trial += 1
                 self.total_score = 0
                 self.subtrial = 0
-                
+
                 if self.trial >= self.evaluations:
                     self.replay_mode = True
                     self.param = self.bestParam.copy()
-                
+
                 self.reset()
                 return 0, 0, True
 
@@ -161,18 +161,25 @@ class Robot_player(Robot):
         sensor_to_wall = [1.0 if sensor_view[i] != 1 else sensors[i] for i in range(8)]
         sensor_to_robot = [1.0 if sensor_view[i] != 2 else sensors[i] for i in range(8)]
 
+        # 检查是否需要后退
+        if self.robot_id != 1 & self.memory >= 5:
+            translation = -sensor_to_robot[sensor_front]  # 后退
+            rotation = 0
+            self.memory = 0  # 重置memory
+            return self.normalize_output(translation, rotation)
+
         # Couche 1 : évitement des murs
         if any(sensor_to_wall[i] != 1.0 for i in range(8)):
             translation = sensor_to_wall[sensor_front]
             rotation = (
-                sensor_to_wall[sensor_front_right] * (-1) +  
-                sensor_to_wall[sensor_right] * (-1) +        
-                sensor_to_wall[sensor_rear_right] * (-1) + 
-                sensor_to_wall[sensor_front_left] * (1) +    
-                sensor_to_wall[sensor_left] * (1) +         
+                sensor_to_wall[sensor_front_right] * (-1) +
+                sensor_to_wall[sensor_right] * (-1) +
+                sensor_to_wall[sensor_rear_right] * (-1) +
+                sensor_to_wall[sensor_front_left] * (1) +
+                sensor_to_wall[sensor_left] * (1) +
                 sensor_to_wall[sensor_rear_left] * (1) +
                 sensor_to_wall[sensor_front] * random.randint(-1,1) +
-                sensor_to_wall[sensor_rear] * random.randint(-1,1)
+                random.randint(-2,2)
             )
             return self.normalize_output(translation, rotation)
 
@@ -182,24 +189,24 @@ class Robot_player(Robot):
                 # Éviter les coéquipiers
                 translation = sensor_to_robot[sensor_front]
                 rotation = (
-                    sensor_to_robot[sensor_front_right] * (-1) +  
-                    sensor_to_robot[sensor_right] * (-1) +        
-                    sensor_to_robot[sensor_rear_right] * (-1) + 
-                    sensor_to_robot[sensor_front_left] * (1) +    
-                    sensor_to_robot[sensor_left] * (1) +         
+                    sensor_to_robot[sensor_front_right] * (-1) +
+                    sensor_to_robot[sensor_right] * (-1) +
+                    sensor_to_robot[sensor_rear_right] * (-1) +
+                    sensor_to_robot[sensor_front_left] * (1) +
+                    sensor_to_robot[sensor_left] * (1) +
                     sensor_to_robot[sensor_rear_left] * (1) +
                     sensor_to_robot[sensor_front] * random.randint(-1,1) +
-                    sensor_to_robot[sensor_rear] * random.randint(-1,1) 
+                    random.randint(-2,2)
                 )
             else:
                 # Pourchasser les ennemis
                 translation = sensor_to_robot[sensor_front]
                 rotation = (
-                    sensor_to_robot[sensor_front_right] * (1) +  
-                    sensor_to_robot[sensor_right] * (1) +        
-                    sensor_to_robot[sensor_rear_right] * (1) + 
-                    sensor_to_robot[sensor_front_left] * (-1) +    
-                    sensor_to_robot[sensor_left] * (-1) +         
+                    sensor_to_robot[sensor_front_right] * (1) +
+                    sensor_to_robot[sensor_right] * (1) +
+                    sensor_to_robot[sensor_rear_right] * (1) +
+                    sensor_to_robot[sensor_front_left] * (-1) +
+                    sensor_to_robot[sensor_left] * (-1) +
                     sensor_to_robot[sensor_rear_left] * (-1)
                 )
             return self.normalize_output(translation, rotation)
@@ -223,15 +230,21 @@ class Robot_player(Robot):
             # Tous les autres robots avancent simplement tout droit
             translation = 1
             rotation = 0
-        
+
         return self.normalize_output(translation, rotation)
 
     def normalize_output(self, translation, rotation):
         translation = max(-1, min(1, translation))
         rotation = max(-1, min(1, rotation))
-        
+
         if self.robot_id == 1:
             self.log_sum_of_rotation += abs(rotation)
-        
+
+        # 更新memory
+        if self.x == self.last_position[0] and self.y == self.last_position[1]:
+            self.memory += 1
+        else:
+            self.memory = 0
+
         self.iteration += 1
         return translation, rotation, False
