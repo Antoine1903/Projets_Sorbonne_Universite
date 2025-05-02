@@ -7,7 +7,6 @@
 from robot import *
 import math
 import random
-import csv
 
 nb_robots = 0
 debug = False
@@ -15,7 +14,7 @@ debug = False
 class Robot_player(Robot):
     team_name = "Yutoine"
     robot_id = -1
-    memory = 0  # 用于记录是否移动
+    memory = 0  # nombre d'itérations où le robot reste dans la même case (blocage)
     iteration = 0
 
     # Paramètres de l’algorithme génétique (seulement pour le robot 1)
@@ -161,11 +160,11 @@ class Robot_player(Robot):
         sensor_to_wall = [1.0 if sensor_view[i] != 1 else sensors[i] for i in range(8)]
         sensor_to_robot = [1.0 if sensor_view[i] != 2 else sensors[i] for i in range(8)]
 
-        # 检查是否需要后退
+        # si bloqué depuis 5 itérations dans la même case
         if self.robot_id != 1 & self.memory >= 5:
-            translation = -sensor_to_robot[sensor_front]  # 后退
+            translation = -sensors[sensor_front]  # reculer
             rotation = 0
-            self.memory = 0  # 重置memory
+            self.memory = 0  # réinitialiser la mémoire
             return self.normalize_output(translation, rotation)
 
         # Couche 1 : évitement des murs
@@ -240,7 +239,7 @@ class Robot_player(Robot):
         if self.robot_id == 1:
             self.log_sum_of_rotation += abs(rotation)
 
-        # 更新memory
+        # mise à jour de la mémoire
         if self.x == self.last_position[0] and self.y == self.last_position[1]:
             self.memory += 1
         else:
