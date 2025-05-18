@@ -324,20 +324,19 @@ class ClassifierNaiveBayesMultinomial(Classifier):
             index_mots (list): Liste de tous les mots indexés (vocabulaire)
         """
         self.index_mots = index_mots
+        self.mot_to_index = {mot: idx for idx, mot in enumerate(index_mots)} 
         V = len(index_mots)
         les_targets = sorted(df_train['target'].unique())
         
-        # Initialisation des compteurs
         word_counts = {c: np.zeros(V) for c in les_targets}
         class_counts = {c: 0 for c in les_targets}
         
-        # Comptage des mots par classe
         for _, row in df_train.iterrows():
             label = row['target']
             mots = row['les_mots']
             for mot in mots:
-                if mot in index_mots:
-                    index = index_mots.index(mot)
+                if mot in self.mot_to_index:
+                    index = self.mot_to_index[mot]
                     word_counts[label][index] += 1
                     class_counts[label] += 1
         
@@ -368,12 +367,12 @@ class ClassifierNaiveBayesMultinomial(Classifier):
         for c in self.prior:
             log_prob = np.log(self.prior[c])
             for mot in les_mots_test:
-                if mot in self.index_mots:
-                    idx = self.index_mots.index(mot)
+                if mot in self.mot_to_index:
+                    idx = self.mot_to_index[mot]
                     log_prob += np.log(self.likelihood[c][idx])
             scores[c] = log_prob
         return max(scores, key=scores.get)
-    
+
 class NoeudCategoriel:
     """ Classe pour représenter des noeuds d'un arbre de décision
     """
