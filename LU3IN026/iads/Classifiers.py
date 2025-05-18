@@ -108,7 +108,6 @@ class ClassifierKNNCosine(ClassifierKNN):
         k_nearest_labels = self.label_set[k_nearest_indices]
         p = np.mean(k_nearest_labels == +1)
         return p
-
     
 class ClassifierLineaireRandom(Classifier):
     """ Classifieur linéaire avec un vecteur de poids aléatoire.
@@ -271,7 +270,6 @@ class ClassifierMultiOAA(Classifier):
         self.models = {}
         self.classes = None
         
-        
     def train(self, desc_set, label_set):
         """ Permet d'entrainer le modele sur l'ensemble donné
             réalise une itération sur l'ensemble des données prises aléatoirement
@@ -290,13 +288,11 @@ class ClassifierMultiOAA(Classifier):
             cl_bin_copy.train(desc_set, labels_bin)  # Entraînement sur les données
             self.models[c] = cl_bin_copy  # Stocker le classifieur pour la classe c
         
-    
     def score(self,x):
         """ rend le score de prédiction sur x (valeur réelle)
             x: une description
         """
         return {c: model.score(x) for c, model in self.models.items()}  # Calculer le score du classifieur pour la classe c
-        
         
     def predict(self, x):
         """ rend la prediction sur x (soit -1 ou soit +1)
@@ -454,6 +450,80 @@ def construit_AD(X, Y, epsilon, LNoms=[]):
 
     return noeud
 
+class ClassifierNaiveBayesMultinomial(Classifier):
+    def __init__(self, input_dimension, alpha=1.0):
+        """
+        Classifieur Naive Bayes Multinomial avec lissage de Laplace.
+        
+        Args:
+            input_dimension (int): Taille du vocabulaire (nb de mots distincts)
+            alpha (float): Coefficient de lissage de Laplace (par défaut = 1.0)
+        """
+        self.input_dimension = input_dimension
+        self.alpha = alpha
+        self.prior = {}       # p(c)
+        self.likelihood = {}  # p(w|c)
+        self.index_mots = []  # Index inverse des mots, utile pour prédire à partir des mots (facultatif)
+    
+    def train(self, df_train, index_mots):
+        """
+        Entraîne le classifieur à partir du DataFrame df_train.
+        
+        Args:
+            df_train (DataFrame): Données d'entraînement contenant 'les_mots' et 'target'
+            index_mots (list): Liste de tous les mots indexés (vocabulaire)
+        """
+        self.index_mots = index_mots
+        V = len(index_mots)
+        les_targets = sorted(df_train['target'].unique())
+        
+        # Initialisation des compteurs
+        word_counts = {c: np.zeros(V) for c in les_targets}
+        class_counts = {c: 0 for c in les_targets}
+        
+        # Comptage des mots par classe
+        for _, row in df_train.iterrows():
+            label = row['target']
+            mots = row['les_mots']
+            for mot in mots:
+                if mot in index_mots:
+                    index = index_mots.index(mot)
+                    word_counts[label][index] += 1
+                    class_counts[label] += 1
+        
+        # Calcul des probabilités a priori
+        total_docs = len(df_train)
+        self.prior = {
+            c: len(df_train[df_train['target'] == c]) / total_docs
+            for c in les_targets
+        }
+        
+        # Calcul des vraisemblances avec lissage de Laplace
+        self.likelihood = {}
+        for c in les_targets:
+            total = class_counts[c]
+            self.likelihood[c] = (word_counts[c] + self.alpha) / (total + self.alpha * V)
+    
+    def predict(self, les_mots_test):
+        """
+        Prédit la classe pour un message (liste de mots).
+        
+        Args:
+            les_mots_test (list): Liste de mots dans le message à classer
+        
+        Returns:
+            int: Label prédit
+        """
+        scores = {}
+        for c in self.prior:
+            log_prob = np.log(self.prior[c])
+            for mot in les_mots_test:
+                if mot in self.index_mots:
+                    idx = self.index_mots.index(mot)
+                    log_prob += np.log(self.likelihood[c][idx])
+            scores[c] = log_prob
+        return max(scores, key=scores.get)
+
 class ClassifierArbreDecision(Classifier):
     """ Classe pour représenter un classifieur par arbre de décision
     """
@@ -610,7 +680,6 @@ class NoeudNumerique:
             return self.Les_fils['inf'].classifie(exemple)
         else:
             return self.Les_fils['sup'].classifie(exemple)
-
     
     def compte_feuilles(self):
         """ rend le nombre de feuilles sous ce noeud
