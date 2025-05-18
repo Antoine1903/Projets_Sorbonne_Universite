@@ -15,6 +15,7 @@ import pandas as pd
 import copy
 import math
 import graphviz as gv
+from numpy.linalg import norm
 
 # ---------------------------
 class Classifier:
@@ -99,6 +100,15 @@ class ClassifierKNN(Classifier):
             x: une description : un ndarray
         """
         return 1 if self.score(x) >= 0.5 else -1
+
+class ClassifierKNNCosine(ClassifierKNN):
+    def score(self, x):
+        similarities = np.dot(self.desc_set, x) / (norm(self.desc_set, axis=1) * norm(x) + 1e-10)
+        k_nearest_indices = np.argsort(-similarities)[:self.k]
+        k_nearest_labels = self.label_set[k_nearest_indices]
+        p = np.mean(k_nearest_labels == +1)
+        return p
+
     
 class ClassifierLineaireRandom(Classifier):
     """ Classifieur linéaire avec un vecteur de poids aléatoire.
