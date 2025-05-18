@@ -15,6 +15,7 @@ import pandas as pd
 import itertools
 import scipy.cluster.hierarchy as sch
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 
 # ------------------------ 
 def normalisation(df):
@@ -374,4 +375,196 @@ def CHA(df, linkage, verbose=False, dendrogramme=False):
         plt.show()
 
     return fusion_results
+
+def inertie_cluster(Ens):
+    """ Array -> float
+        Ens: array qui représente un cluster
+        Hypothèse: len(Ens)> >= 2
+        L'inertie est la somme (au carré) des distances des points au centroide.
+    """
+
+    Ens = np.array(Ens)
+    
+    # Calcul du centroïde
+    centre = np.mean(Ens, axis=0)
+
+    # Calcul des distances au carré de chaque point au centroïde
+    distances_carre = np.sum((Ens - centre) ** 2, axis=1)
+
+    # Inertie = somme des distances au carré
+    return np.sum(distances_carre)
+
+def init_kmeans(K,Ens):
+    """ int * Array -> Array
+        K : entier >1 et <=n (le nombre d'exemples de Ens)
+        Ens: Array contenant n exemples
+    """
+
+    indices = np.random.choice(len(Ens), size=K, replace=False)
+    return Ens.iloc[indices] 
+    
+
+def plus_proche(Exe,Centres):
+    """ Array * Array -> int
+        Exe : Array contenant un exemple
+        Centres : Array contenant les K centres
+    """
+
+    # Calcul des distances euclidiennes entre Exe et chaque centre
+    distances = np.linalg.norm(Centres - Exe, axis=1)
+    return np.argmin(distances)
+    
+
+def affecte_cluster(Base,Centres):
+    """ Array * Array -> dict[int,list[int]]
+        Base: Array contenant la base d'apprentissage
+        Centres : Array contenant des centroides
+    """
+    
+    # Initialisation d'un dictionnaire pour l'affectation
+    affectation = {i: [] for i in range(len(Centres))}
+    
+    # Pour chaque exemple de la base, on l'affecte au cluster du centroïde le plus proche
+    for i, exemple in enumerate(Base.values):
+        # Trouver l'indice du centroïde le plus proche
+        indice_cluster = plus_proche(exemple, Centres)
+        # Ajouter cet exemple à la liste du cluster correspondant
+        affectation[indice_cluster].append(i)
+    
+    return affectation  
+    
+def nouveaux_centroides(Base,U):
+    """ Array * dict[int,list[int]] -> DataFrame
+        Base : Array contenant la base d'apprentissage
+        U : Dictionnaire d'affectation
+    """
+    
+    centroides = []
+    
+    # Pour chaque cluster (chaque clé dans U)
+    for cluster, indices in U.items():
+        # Sélectionner les exemples appartenant au cluster
+        cluster_data = Base.iloc[indices] if isinstance(Base, pd.DataFrame) else Base[indices]
+        
+        # Calculer le centroïde du cluster (moyenne des exemples)
+        centroide = cluster_data.mean(axis=0)
+        
+        # Ajouter le centroïde à la liste
+        centroides.append(centroide)
+    
+    # Convertir la liste des centroïdes en DataFrame
+    nouveaux_centroides_df = pd.DataFrame(centroides)
+    
+    return nouveaux_centroides_df     
+
+def inertie_globale(Base, U):
+    """ Array * dict[int,list[int]] -> float
+        Base : Array pour la base d'apprentissage
+        U : Dictionnaire d'affectation
+    """
+    
+    inertie_totale = 0.0
+    
+    # Parcours des clusters dans U
+    for cluster_id, indices in U.items():
+        # Récupération des points du cluster à partir de Base
+        points = Base.iloc[indices]  # Utilise .iloc pour accéder aux lignes par index
+        
+        # Calcul de l'inertie pour ce cluster avec la fonction inertie_cluster
+        inertie_totale += inertie_cluster(points)
+    
+    return inertie_totale
+
+def kmoyennes(K, Base, epsilon, iter_max):
+    """ int * Array * float * int -> tuple(Array, dict[int,list[int]])
+        K : entier > 1 (nombre de clusters)
+        Base : DataFrame pour la base d'apprentissage
+        epsilon : réel >0 (critère de convergence)
+        iter_max : entier >1 (nombre d'itérations maximal)
+    """
+    
+    # Initialisation des centroids : on choisit aléatoirement K points de la base
+    indices_initials = np.random.choice(Base.shape[0], K, replace=False)
+    centroids = Base.iloc[indices_initials].values  # Utilise .iloc[] pour accéder aux lignes
+
+    # Initialisation de la matrice d'affectation
+    DictAffect = {i: [] for i in range(K)}
+
+    # Calcul de l'inertie initiale
+    inertie_precedente = 1 + epsilon
+
+    for iteration in range(iter_max):
+        # 1. Assignation des points aux clusters
+        DictAffect = {i: [] for i in range(K)}  # On réinitialise les clusters
+        for i, point in enumerate(Base.values):
+            # Calcul des distances au centroid le plus proche
+            distances = np.linalg.norm(centroids - point, axis=1)
+            cluster_id = np.argmin(distances)
+            DictAffect[cluster_id].append(i)
+        
+        # 2. Mise à jour des centroids
+        nouveaux_centroids = np.zeros_like(centroids)
+        for i in range(K):
+            # Calcul du centroïde de chaque cluster (moyenne des points)
+            if len(DictAffect[i]) > 0:
+                nouveaux_centroids[i] = np.mean(Base.iloc[DictAffect[i]].values, axis=0)
+
+        # 3. Calcul de l'inertie pour cette itération
+        inertie_actuelle = 0
+        for i in range(K):
+            cluster_points = Base.iloc[DictAffect[i]].values
+            inertie_actuelle += inertie_cluster(cluster_points)
+
+        # 4. Calcul de la différence avec l'inertie précédente
+        difference_inertie = abs(inertie_actuelle - inertie_precedente)  # Utiliser la valeur absolue
+
+        # Affichage de l'inertie et de la différence
+        print(f"Iteration {iteration + 1} Inertie : {inertie_actuelle:.4f} Difference: {difference_inertie:.4f}")
+
+        # Critère de convergence : vérifier si l'inertie a suffisamment diminué
+        if difference_inertie < epsilon:
+            break
+
+        # Mettre à jour les centroids et l'inertie précédente pour la prochaine itération
+        centroids = nouveaux_centroids
+        inertie_precedente = inertie_actuelle
+
+    return centroids, DictAffect
+
+def affiche_resultat(Base,Centres,Affect):
+    """ DataFrame **2 * dict[int,list[int]] -> None
+    """
+
+    # Nombre de clusters K
+    K = len(Centres)
+
+    # On récupère les couleurs de la colormap 'tab20' (maximum 20 couleurs)
+    couleurs = cm.tab20(np.linspace(0, 1, 20))
+
+    # Création de la figure et des axes pour l'affichage
+    plt.figure(figsize=(8, 6))
+
+    # Pour chaque cluster, on affiche les points avec la couleur correspondante
+    for cluster_id in range(K):
+        # Récupérer les indices des points appartenant à ce cluster
+        indices = Affect[cluster_id]
+        # Extraire les points de Base correspondants
+        points_cluster = Base.iloc[indices]
+        
+        # Tracer les points du cluster avec la couleur correspondante
+        plt.scatter(points_cluster.iloc[:, 0], points_cluster.iloc[:, 1], 
+                    color=couleurs[cluster_id], label=f'Cluster {cluster_id+1}')
+        
+        # Afficher le centre du cluster en rouge et en plus gros
+        plt.scatter(Centres[cluster_id, 0], Centres[cluster_id, 1], 
+                    color='red', marker='x', s=100, label=f'Centre {cluster_id+1}')
+
+    # Ajouter des légendes, titre et axes
+    plt.title('Résultats de l\'algorithme K-means')
+    plt.xlabel('Dimension 1')
+    plt.ylabel('Dimension 2')
+    plt.legend()
+    
+    # Affichage du graphique
+    plt.show()   
 # ------------------------ 

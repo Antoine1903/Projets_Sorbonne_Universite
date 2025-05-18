@@ -16,7 +16,7 @@ import copy
 import math
 import graphviz as gv
 from numpy.linalg import norm
-
+import random
 # ---------------------------
 class Classifier:
     """ Classe (abstraite) pour représenter un classifieur
@@ -300,6 +300,80 @@ class ClassifierMultiOAA(Classifier):
         """
         return max(self.models.keys(), key=lambda c: self.models[c].score(x))  # Retourner la classe ayant le score maximal
 
+class ClassifierNaiveBayesMultinomial(Classifier):
+    def __init__(self, input_dimension, alpha=1.0):
+        """
+        Classifieur Naive Bayes Multinomial avec lissage de Laplace.
+        
+        Args:
+            input_dimension (int): Taille du vocabulaire (nb de mots distincts)
+            alpha (float): Coefficient de lissage de Laplace (par défaut = 1.0)
+        """
+        self.input_dimension = input_dimension
+        self.alpha = alpha
+        self.prior = {}       # p(c)
+        self.likelihood = {}  # p(w|c)
+        self.index_mots = []  # Index inverse des mots, utile pour prédire à partir des mots (facultatif)
+    
+    def train(self, df_train, index_mots):
+        """
+        Entraîne le classifieur à partir du DataFrame df_train.
+        
+        Args:
+            df_train (DataFrame): Données d'entraînement contenant 'les_mots' et 'target'
+            index_mots (list): Liste de tous les mots indexés (vocabulaire)
+        """
+        self.index_mots = index_mots
+        V = len(index_mots)
+        les_targets = sorted(df_train['target'].unique())
+        
+        # Initialisation des compteurs
+        word_counts = {c: np.zeros(V) for c in les_targets}
+        class_counts = {c: 0 for c in les_targets}
+        
+        # Comptage des mots par classe
+        for _, row in df_train.iterrows():
+            label = row['target']
+            mots = row['les_mots']
+            for mot in mots:
+                if mot in index_mots:
+                    index = index_mots.index(mot)
+                    word_counts[label][index] += 1
+                    class_counts[label] += 1
+        
+        # Calcul des probabilités a priori
+        total_docs = len(df_train)
+        self.prior = {
+            c: len(df_train[df_train['target'] == c]) / total_docs
+            for c in les_targets
+        }
+        
+        # Calcul des vraisemblances avec lissage de Laplace
+        self.likelihood = {}
+        for c in les_targets:
+            total = class_counts[c]
+            self.likelihood[c] = (word_counts[c] + self.alpha) / (total + self.alpha * V)
+    
+    def predict(self, les_mots_test):
+        """
+        Prédit la classe pour un message (liste de mots).
+        
+        Args:
+            les_mots_test (list): Liste de mots dans le message à classer
+        
+        Returns:
+            int: Label prédit
+        """
+        scores = {}
+        for c in self.prior:
+            log_prob = np.log(self.prior[c])
+            for mot in les_mots_test:
+                if mot in self.index_mots:
+                    idx = self.index_mots.index(mot)
+                    log_prob += np.log(self.likelihood[c][idx])
+            scores[c] = log_prob
+        return max(scores, key=scores.get)
+    
 class NoeudCategoriel:
     """ Classe pour représenter des noeuds d'un arbre de décision
     """
@@ -374,20 +448,19 @@ class NoeudCategoriel:
             total += self.Les_fils[noeud].compte_feuilles()
         return total
      
-    def to_graph(self, g, prefixe='A'):
-        """ construit une représentation de l'arbre pour pouvoir l'afficher graphiquement
-            Cette fonction ne nous intéressera pas plus que ça, elle ne sera donc pas expliquée            
-        """
-        if self.est_feuille():
-            g.node(prefixe,str(self.classe),shape='box')
-        else:
-            g.node(prefixe, self.nom_attribut)
-            i =0
-            for (valeur, sous_arbre) in self.Les_fils.items():
-                sous_arbre.to_graph(g,prefixe+str(i))
-                g.edge(prefixe,prefixe+str(i), valeur)
-                i = i+1        
+    def to_graph(self, g, prefixe=""):
+        g.node(str(prefixe), str(self.attribut))
+
+        if not self.Les_fils:
+            return
+        
+        i = 0
+        for (valeur, sous_arbre) in self.Les_fils.items():
+            sous_arbre.to_graph(g, prefixe + str(i))
+            g.edge(str(prefixe), str(prefixe + str(i)), label=str(valeur))
+            i += 1
         return g
+
 
 def construit_AD(X, Y, epsilon, LNoms=[]):
     """ 
@@ -449,80 +522,6 @@ def construit_AD(X, Y, epsilon, LNoms=[]):
             noeud.ajoute_fils(v, construit_AD(X_v, Y_v, epsilon, LNoms))
 
     return noeud
-
-class ClassifierNaiveBayesMultinomial(Classifier):
-    def __init__(self, input_dimension, alpha=1.0):
-        """
-        Classifieur Naive Bayes Multinomial avec lissage de Laplace.
-        
-        Args:
-            input_dimension (int): Taille du vocabulaire (nb de mots distincts)
-            alpha (float): Coefficient de lissage de Laplace (par défaut = 1.0)
-        """
-        self.input_dimension = input_dimension
-        self.alpha = alpha
-        self.prior = {}       # p(c)
-        self.likelihood = {}  # p(w|c)
-        self.index_mots = []  # Index inverse des mots, utile pour prédire à partir des mots (facultatif)
-    
-    def train(self, df_train, index_mots):
-        """
-        Entraîne le classifieur à partir du DataFrame df_train.
-        
-        Args:
-            df_train (DataFrame): Données d'entraînement contenant 'les_mots' et 'target'
-            index_mots (list): Liste de tous les mots indexés (vocabulaire)
-        """
-        self.index_mots = index_mots
-        V = len(index_mots)
-        les_targets = sorted(df_train['target'].unique())
-        
-        # Initialisation des compteurs
-        word_counts = {c: np.zeros(V) for c in les_targets}
-        class_counts = {c: 0 for c in les_targets}
-        
-        # Comptage des mots par classe
-        for _, row in df_train.iterrows():
-            label = row['target']
-            mots = row['les_mots']
-            for mot in mots:
-                if mot in index_mots:
-                    index = index_mots.index(mot)
-                    word_counts[label][index] += 1
-                    class_counts[label] += 1
-        
-        # Calcul des probabilités a priori
-        total_docs = len(df_train)
-        self.prior = {
-            c: len(df_train[df_train['target'] == c]) / total_docs
-            for c in les_targets
-        }
-        
-        # Calcul des vraisemblances avec lissage de Laplace
-        self.likelihood = {}
-        for c in les_targets:
-            total = class_counts[c]
-            self.likelihood[c] = (word_counts[c] + self.alpha) / (total + self.alpha * V)
-    
-    def predict(self, les_mots_test):
-        """
-        Prédit la classe pour un message (liste de mots).
-        
-        Args:
-            les_mots_test (list): Liste de mots dans le message à classer
-        
-        Returns:
-            int: Label prédit
-        """
-        scores = {}
-        for c in self.prior:
-            log_prob = np.log(self.prior[c])
-            for mot in les_mots_test:
-                if mot in self.index_mots:
-                    idx = self.index_mots.index(mot)
-                    log_prob += np.log(self.likelihood[c][idx])
-            scores[c] = log_prob
-        return max(scores, key=scores.get)
 
 class ClassifierArbreDecision(Classifier):
     """ Classe pour représenter un classifieur par arbre de décision
@@ -1039,4 +1038,78 @@ class ClassifierArbre(Classifier):
                     noeud.ajoute_fils(v, self.construit_AD(X_v, Y_v, epsilon, LNoms))
 
         return noeud
+
+def tirage(VX, m, avecRemise=False):
+    """ VX: vecteur d'indices 
+        m : nombre d'exemples à sélectionner (hypothèse: m <= len(VX))
+        avecRemise: booléen, true si avec remise, ou faux sinon
+    """
+    if avecRemise:
+        # avec remise
+        return random.choices(VX, k=m)
+    else:
+        # sans remise
+        return random.sample(VX, m)
+    
+def echantillonLS(LS,m,avecRemise):
+    """ LS: LabeledSet (couple de np.arrays)
+        m : entier donnant la taille de l'échantillon voulu (hypothèse: m <= len(LS))
+        avecRemise: booléen pour le mode de tirage
+    """
+    (desc, labels) = LS
+    
+    indices = tirage(list(range(len(desc))), m, avecRemise)
+
+    echantillon_desc = desc[indices, :]
+    echantillon_labels = labels[indices]
+
+    return echantillon_desc, echantillon_labels
+
+class ClassifierBaggingTree(Classifier):
+    """ Classifier utilisant le bagging d'arbres de décision """
+    
+    def __init__(self, input_dimension, B, pourcentage_echantillon, epsilon, avecRemise):
+        """ Initialisation avec epsilon avant avecRemise """
+        super().__init__(input_dimension)
+        self.B = B
+        self.pourcentage_echantillon = pourcentage_echantillon
+        self.epsilon = epsilon
+        self.avecRemise = avecRemise
+        self.arbres = []
+    
+    def train(self, desc_set, label_set):
+        """ Entraînement du modèle en construisant B arbres de décision """
+        n = len(desc_set)
+        m = int(n * self.pourcentage_echantillon)
+    
+        for _ in range(self.B):
+            # Créer un échantillon bootstrap
+            echantillon_desc, echantillon_labels = echantillonLS((desc_set, label_set), m, self.avecRemise)
+            
+            # Vérifier que l'échantillon contient au moins 2 classes
+            if len(np.unique(echantillon_labels)) < 2:
+                print("Avertissement: Échantillon ne contient qu'une seule classe")
+                continue
+                
+            # Créer et entraîner un arbre avec epsilon
+            arbre = ClassifierArbre(self.dimension, self.epsilon, [])
+            arbre.train(echantillon_desc, echantillon_labels)
+            
+            if arbre.racine is not None:
+                self.arbres.append(arbre)
+            else:
+                print("Avertissement: Échec construction arbre - données peut-être non séparables")
+
+    def predict(self, x):
+        """ Prédiction basée sur le vote des arbres """
+        votes = [arbre.predict(x) for arbre in self.arbres if arbre.racine is not None]
+        if not votes:
+            raise ValueError("Aucun arbre n'a été correctement entraîné.")
+        return 1 if sum(votes) >= 0 else -1
+    
+    def score(self, x):
+        """ Calcul du score de classification (valeur réelle) """
+        votes = np.array([arbre.predict(x) for arbre in self.arbres])
+        score = np.sum(votes)
+        return score / self.B
 # ------------------------ 
