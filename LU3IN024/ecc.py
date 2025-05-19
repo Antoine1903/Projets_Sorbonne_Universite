@@ -179,26 +179,58 @@ def dessine_graphe(p):
 
 def moins(P, p):
     """Retourne l'opposé du point P mod p."""
-
-    return 
+    if est_zero(P):
+        return P
+    x, y = P
+    return (x, (-y) % p)
 
 
 def est_egal(P1, P2, p):
     """Teste l'égalité de deux points mod p."""
-
-    return
+    if est_zero(P1) and est_zero(P2):
+        return True
+    if est_zero(P1) or est_zero(P2):
+        return False
+    x1, y1 = P1
+    x2, y2 = P2
+    return x1 % p == x2 % p and y1 % p == y2 % p
 
 
 def est_zero(P):
     """Teste si un point est égal au point à l'infini."""
-
-    return
+    return P == ()
 
 
 def addition(P1, P2, E):
     """Renvoie P1 + P2 sur la courbe E."""
-    
-    return
+    p, a, b = E
+
+    if est_zero(P1):
+        return P2
+    if est_zero(P2):
+        return P1
+
+    x1, y1 = P1
+    x2, y2 = P2
+
+    if est_egal(P1, moins(P2, p), p):
+        return ()
+
+    if est_egal(P1, P2, p):
+        # Point doubling
+        if y1 == 0:
+            return ()
+        lambda_ = ((3 * x1 ** 2 + a) * inv_mod(2 * y1, p)) % p
+    else:
+        # Point addition
+        if x1 == x2:
+            return ()
+        lambda_ = ((y2 - y1) * inv_mod(x2 - x1, p)) % p
+
+    x3 = (lambda_ ** 2 - x1 - x2) % p
+    y3 = (lambda_ * (x1 - x3) - y1) % p
+
+    return (x3, y3)
 
 
 def multiplication_scalaire(k, P, E):
