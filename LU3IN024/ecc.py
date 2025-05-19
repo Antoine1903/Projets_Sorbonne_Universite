@@ -1,8 +1,8 @@
 # Sorbonne Université LU3IN024 2024-2025
 # TME 5 : Cryptographie à base de courbes elliptiques
 #
-# Etudiant.e 1 : NOM ET NUMERO D'ETUDIANT
-# Etudiant.e 2 : NOM ET NUMERO D'ETUDIANT
+# Etudiant.e 1 : ZHANG Yuxiang 21202829
+# Etudiant.e 2 : LECOMTE Antoine 21103457
 
 from math import sqrt
 import matplotlib.pyplot as plt
