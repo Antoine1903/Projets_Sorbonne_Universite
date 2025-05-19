@@ -217,12 +217,10 @@ def addition(P1, P2, E):
         return ()
 
     if est_egal(P1, P2, p):
-        # Point doubling
         if y1 == 0:
             return ()
         lambda_ = ((3 * x1 ** 2 + a) * inv_mod(2 * y1, p)) % p
     else:
-        # Point addition
         if x1 == x2:
             return ()
         lambda_ = ((y2 - y1) * inv_mod(x2 - x1, p)) % p
@@ -235,47 +233,80 @@ def addition(P1, P2, E):
 
 def multiplication_scalaire(k, P, E):
     """Renvoie la multiplication scalaire k*P sur la courbe E."""
-    
-    return
+    if k < 0:
+        return multiplication_scalaire(-k, moins(P, E[0]), E)
+
+    R = ()
+    Q = P
+    while k > 0:
+        if k % 2 == 1:
+            R = addition(R, Q, E)
+        Q = addition(Q, Q, E)
+        k //= 2
+    return R
 
 
 def ordre(N, factors_N, P, E):
-    """Renvoie l'ordre du point P dans les points de la courbe E mod p. 
+    """
+    Renvoie l'ordre du point P dans les points de la courbe E mod p. 
     N est le nombre de points de E sur Fp.
-    factors_N est la factorisation de N en produit de facteurs premiers."""
-
-    return 
+    factors_N est la factorisation de N en liste [(p1, a1), (p2, a2), ...]
+    """
+    ordre_P = N
+    for (q, _) in factors_N:
+        while ordre_P % q == 0:
+            m = ordre_P // q
+            if est_zero(multiplication_scalaire(m, P, E)):
+                ordre_P = m
+            else:
+                break
+    return ordre_P
 
 
 def point_aleatoire_naif(E):
-    """Renvoie un point aléatoire (différent du point à l'infini) sur la courbe E."""
-    
-    return 
-
+    """Renvoie un point (x, y) aléatoire appartenant à la courbe E."""
+    p, _, _ = E
+    while True:
+        x = randint(0, p - 1)
+        y = randint(0, p - 1)
+        if point_sur_courbe((x, y), E):
+            return (x, y)
+ 
 
 def point_aleatoire(E):
-    """Renvoie un point aléatoire (différent du point à l'infini) sur la courbe E."""
-
-    return
+    """Renvoie un point (x, y) aléatoire sur E, optimisé pour p ≡ 3 mod 4."""
+    p, a, b = E
+    assert p % 4 == 3, "Cette méthode suppose que p ≡ 3 mod 4"
+    
+    while True:
+        x = randint(0, p - 1)
+        rhs = (x**3 + a*x + b) % p
+        if symbole_legendre(rhs, p) == 1:
+            y = racine_carree(rhs, p)
+            return (x, y)
+        elif rhs == 0:
+            return (x, 0)
 
 
 def point_ordre(E, N, factors_N, n):
-    """Renvoie un point aléatoire d'ordre N sur la courbe E.
-    Ne vérifie pas que n divise N."""
+    """Renvoie un point aléatoire d'ordre exact n."""
+    assert N % n == 0
+    while True:
+        P = point_aleatoire(E)
+        Q = multiplication_scalaire(N // n, P, E)
+        if not est_zero(Q) and ordre(N, factors_N, Q, E) == n:
+            return Q
 
-    return
 
 def keygen_DH(P, E, n):
     """Génère une clé publique et une clé privée pour un échange Diffie-Hellman.
     P est un point d'ordre n sur la courbe E.
     """
-    sec = None # A remplacer
-    pub = None # A remplacer
-    
+    sec = randint(1, n - 1)
+    pub = multiplication_scalaire(sec, P, E)
     return (sec, pub)
 
 def echange_DH(sec_A, pub_B, E):
     """Renvoie la clé commune à l'issue d'un échange Diffie-Hellman.
     sec_A est l'entier secret d'Alice et pub_b est l'entier public de Bob."""
-
-    return
+    return multiplication_scalaire(sec_A, pub_B, E)
