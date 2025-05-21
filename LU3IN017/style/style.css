@@ -1,0 +1,121 @@
+:root {
+    --font-family: 'Montserrat', Helvetica, Arial, sans-serif;
+    --soft-blue: #6c8ba4;
+    --soft-teal: #4da6a6;
+    --soft-green: #8abf86;
+    --soft-yellow: #f9c784;
+    --grey1: #f7f8f8;
+    --grey2: #eef0f1;
+    --success: var(--soft-green);
+    --error: #e87d7d;
+}
+
+/* Forms */
+input, textarea {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: var(--soft-teal) solid 2px;
+    font-family: var(--font-family);
+}
+
+input:focus, textarea:focus {
+    border-color: var(--soft-blue);
+    box-shadow: 0 0 20px 0 rgba(118, 193, 193, 0.5);
+}
+
+button {
+    background-color: var(--soft-teal);
+    border: var(--soft-teal) 2px solid;
+    color: #fff;
+    height: 40px;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-family: var(--font-family);
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: var(--soft-blue);
+    border-color: var(--soft-blue);
+}
+
+/* Header */
+header {
+    background-color: var(--soft-teal);
+    box-shadow: 0 0 20px 4px rgba(195, 195, 195, 0.4);
+    padding: 25px 100px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#logo a {
+    font-size: 32px;
+    color: #fff;
+    font-weight: 900;
+    text-transform: uppercase;
+    text-decoration: none;
+}
+
+#logo a:hover {
+    color: var(--soft-yellow);
+}
+
+#nav-login {
+    display: flex;
+    align-items: center;
+}
+
+#nav-login button {
+    font-size: 18px;
+    color: #fff;
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-left: 25px;
+}
+
+#nav-login button:hover {
+    color: var(--soft-yellow);
+}
+
+/* Footer */
+footer {
+    background-color: var(--soft-teal);
+    box-shadow: 0 0 20px 4px rgba(195, 195, 195, 0.4);
+    padding: 30px 100px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #fff;
+}
+
+/* Alerts */
+.alert {
+    color: #fff;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 25px;
+    font-size: 14px;
+}
+
+.alert.success {
+    background-color: var(--success);
+}
+
+.alert.error {
+    background-color: var(--error);
+}
+
+/* Links */
+a {
+    color: var(--soft-teal);
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+a:hover {
+    color: var(--soft-blue);
+}
