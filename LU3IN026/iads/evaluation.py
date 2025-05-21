@@ -37,7 +37,7 @@ def crossval_strat(X, Y, n_iterations, iteration):
     indices_by_class = {cls: np.where(Y == cls)[0] for cls in unique_classes}
     
     test_indices = []
-    train_indices_set = set(range(len(X)))  # On part de tous les indices
+    train_indices_set = set(range(X.shape[0])) # On part de tous les indices
     
     for cls in unique_classes:
         indices = indices_by_class[cls]
@@ -77,11 +77,65 @@ def validation_croisee(C, DS, nb_iter):
         Y_pred = np.array([classifieur.predict(x) for x in Xtest])
         taux_bonne_classification = np.mean(Y_pred == Ytest)
         perf.append(taux_bonne_classification)
-        print(f'Itération {i}: taille base app.= {len(Xapp)}\ttaille base test={len(Xtest)}\tTaux de bonne classif: {taux_bonne_classification:.4f}')
+        print(f'Itération {i}: taille base app.= {Xapp.shape[0]}\ttaille base test={Xtest.shape[0]}\tTaux de bonne classif: {taux_bonne_classification:.4f}')
         
     taux_moyen = np.mean(perf)
     taux_ecart = np.std(perf)
     
     print("------ fin affichage validation croisée")
     return perf, taux_moyen, taux_ecart
+
+def xie_beni_index_manual(X, labels, centroids):
+    n_samples = X.shape[0]
+    # Somme des distances intra-cluster au carré
+    intra_distances = 0.0
+    for i in range(n_samples):
+        xi = X[i]
+        ci = centroids[labels[i]]
+        intra_distances += np.sum((xi - ci) ** 2)
+
+    # Distance minimale inter-cluster (entre centroïdes)
+    min_intercluster_dist_sq = float('inf')
+    k = len(centroids)
+    for i in range(k):
+        for j in range(i + 1, k):
+            dist_sq = np.sum((centroids[i] - centroids[j]) ** 2)
+            if dist_sq < min_intercluster_dist_sq:
+                min_intercluster_dist_sq = dist_sq
+
+    # Calcul de l'indice Xie-Beni
+    xb = intra_distances / (n_samples * min_intercluster_dist_sq)
+    return xb
+
+def euclidean_dist(a, b):
+    return np.sqrt(np.sum((a - b) ** 2))
+
+def dunn_index_manual(X, labels):
+    unique_labels = np.unique(labels)
+    clusters = [X[labels == l] for l in unique_labels]
+    
+    # 1. Distance minimale entre deux clusters
+    min_intercluster = float('inf')
+    for i in range(len(clusters)):
+        for j in range(i + 1, len(clusters)):
+            for a in clusters[i]:
+                for b in clusters[j]:
+                    d = euclidean_dist(a, b)
+                    if d < min_intercluster:
+                        min_intercluster = d
+    
+    # 2. Distance maximale à l'intérieur d’un cluster
+    max_intracluster = 0.0
+    for cluster in clusters:
+        n = len(cluster)
+        for i in range(n):
+            for j in range(i + 1, n):
+                d = euclidean_dist(cluster[i], cluster[j])
+                if d > max_intracluster:
+                    max_intracluster = d
+    
+    # Calcul de l’indice de Dunn
+    if max_intracluster == 0:
+        return 0
+    return min_intercluster / max_intracluster
 # ------------------------ 

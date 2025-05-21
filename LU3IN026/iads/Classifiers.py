@@ -220,41 +220,55 @@ class ClassifierPerceptron(Classifier):
         return self.allw
 
 class ClassifierPerceptronBiais(ClassifierPerceptron):
-    """ Perceptron de Rosenblatt avec biais
-        Variante du perceptron de base
-    """
-    def __init__(self, input_dimension, learning_rate=0.01, init=True):
-        """ Constructeur de Classifier
-            Argument:
-                - input_dimension (int) : dimension de la description des exemples (>0)
-                - learning_rate (par défaut 0.01): epsilon
-                - init est le mode d'initialisation de w: 
-                    - si True (par défaut): initialisation à 0 de w,
-                    - si False : initialisation par tirage aléatoire de valeurs petites
+    """ Perceptron avec biais stabilisé : f(x)·y < 1 implique mise à jour pondérée """
+
+    def __init__(self, input_dimension, learning_rate=0.01, init=True, keep_history=False):
         """
-        # Appel du constructeur de la classe mère
+        Constructeur.
+        Arguments :
+            - input_dimension (int) : dimension des vecteurs d'entrée
+            - learning_rate (float) : taux d'apprentissage
+            - init (bool) : si True, initialise les poids à zéro ; sinon, à des petites valeurs aléatoires
+            - keep_history (bool) : si True, on garde les poids et biais à chaque étape (pour debug/visualisation)
+        """
         super().__init__(input_dimension, learning_rate, init)
-        # Affichage pour information (décommentez pour la mise au point)
-        # print("Init perceptron biais: w= ",self.w," learning rate= ",learning_rate)
-        
+        self.b = 0.0
+        self.keep_history = keep_history
+        self.allb = [self.b] if keep_history else None
+        self.allw = [self.w.copy()] if keep_history else None
+
     def train_step(self, desc_set, label_set):
-        """ Réalise une unique itération sur tous les exemples du dataset
-            donné en prenant les exemples aléatoirement.
-            Arguments:
-                - desc_set: ndarray avec des descriptions
-                - label_set: ndarray avec les labels correspondants
-        """  
-        indices = list(range(len(desc_set)))
-        np.random.shuffle(indices)
-        
+        """
+        Une itération d'entraînement sur tous les exemples (ordre aléatoire)
+        """
+        indices = np.random.permutation(len(desc_set))
         for i in indices:
             x_i = desc_set[i]
             y_i = label_set[i]
-            f_xi = np.dot(self.w, x_i)  # Score du perceptron
-            
-            if f_xi * y_i < 1:  # Critère modifié
-                self.w += self.learning_rate * (y_i - f_xi) * x_i
-                self.allw.append(self.w.copy())  # Stocker l'évolution des poids   
+            f_xi = np.dot(self.w, x_i) + self.b
+
+            if f_xi * y_i < 1:
+                update = self.learning_rate * (y_i - f_xi)
+                self.w += update * x_i
+                self.b += update
+
+                if self.keep_history:
+                    self.allw.append(self.w.copy())
+                    self.allb.append(self.b)
+
+    def score(self, x):
+        """ Score réel incluant le biais """
+        return np.dot(self.w, x) + self.b
+
+    def predict(self, x):
+        """ Prédiction : -1 ou +1 """
+        return np.sign(self.score(x))
+
+    def get_allb(self):
+        """ Retourne l'historique des biais si keep_history est True """
+        if self.keep_history:
+            return self.allb
+        return None
                 
 class ClassifierMultiOAA(Classifier):
     """ Classifieur multi-classes
@@ -295,34 +309,42 @@ class ClassifierMultiOAA(Classifier):
         return {c: model.score(x) for c, model in self.models.items()}  # Calculer le score du classifieur pour la classe c
         
     def predict(self, x):
-        """ rend la prediction sur x (soit -1 ou soit +1)
-            x: une description
         """
-        return max(self.models.keys(), key=lambda c: self.models[c].score(x))  # Retourner la classe ayant le score maximal
+        Prédit la classe pour un ou plusieurs exemples.
+        - Si x est un seul exemple (1D), retourne une classe.
+        - Si x est un ensemble (2D), retourne un tableau numpy des prédictions.
+        """
+        # Détection simple : si x a un attribut 'shape' et shape[0] > 1, on considère batch
+        # Sinon, c'est un seul exemple
+
+        try:
+            # Si x est sparse matrix ou ndarray
+            if hasattr(x, "shape") and len(x.shape) == 2:
+                # batch prediction
+                n_samples = x.shape[0]
+                y_pred = []
+                for i in range(n_samples):
+                    xi = x[i] if not hasattr(x, "getrow") else x.getrow(i)
+                    scores = {c: model.score(xi) for c, model in self.models.items()}
+                    y_pred.append(max(scores, key=scores.get))
+                return np.array(y_pred)
+        except Exception:
+            # En cas d'erreur, on considère que c'est un seul échantillon
+            pass
+
+        # Single prediction (original)
+        return max(self.models.keys(), key=lambda c: self.models[c].score(x))
 
 class ClassifierNaiveBayesMultinomial(Classifier):
     def __init__(self, input_dimension, alpha=1.0):
-        """
-        Classifieur Naive Bayes Multinomial avec lissage de Laplace.
-        
-        Args:
-            input_dimension (int): Taille du vocabulaire (nb de mots distincts)
-            alpha (float): Coefficient de lissage de Laplace (par défaut = 1.0)
-        """
         self.input_dimension = input_dimension
         self.alpha = alpha
         self.prior = {}       # p(c)
         self.likelihood = {}  # p(w|c)
-        self.index_mots = []  # Index inverse des mots, utile pour prédire à partir des mots (facultatif)
+        self.index_mots = []  
+        self.mot_to_index = {}
     
     def train(self, df_train, index_mots):
-        """
-        Entraîne le classifieur à partir du DataFrame df_train.
-        
-        Args:
-            df_train (DataFrame): Données d'entraînement contenant 'les_mots' et 'target'
-            index_mots (list): Liste de tous les mots indexés (vocabulaire)
-        """
         self.index_mots = index_mots
         self.mot_to_index = {mot: idx for idx, mot in enumerate(index_mots)} 
         V = len(index_mots)
@@ -340,38 +362,105 @@ class ClassifierNaiveBayesMultinomial(Classifier):
                     word_counts[label][index] += 1
                     class_counts[label] += 1
         
-        # Calcul des probabilités a priori
         total_docs = len(df_train)
         self.prior = {
             c: len(df_train[df_train['target'] == c]) / total_docs
             for c in les_targets
         }
         
-        # Calcul des vraisemblances avec lissage de Laplace
         self.likelihood = {}
         for c in les_targets:
             total = class_counts[c]
             self.likelihood[c] = (word_counts[c] + self.alpha) / (total + self.alpha * V)
     
-    def predict(self, les_mots_test):
+    def predict(self, x):
         """
-        Prédit la classe pour un message (liste de mots).
-        
-        Args:
-            les_mots_test (list): Liste de mots dans le message à classer
-        
-        Returns:
-            int: Label prédit
+        x: vecteur 1D (sparse ou dense) représentant les mots d'un document (count ou tfidf)
+        Retourne la classe avec la probabilité postérieure maximale.
         """
         scores = {}
         for c in self.prior:
-            log_prob = np.log(self.prior[c])
-            for mot in les_mots_test:
-                if mot in self.mot_to_index:
-                    idx = self.mot_to_index[mot]
-                    log_prob += np.log(self.likelihood[c][idx])
-            scores[c] = log_prob
+            # log P(c)
+            log_prior = np.log(self.prior[c])
+            # log P(x|c) = sum sur mots de x[i] * log P(w_i|c)
+            # Si x est sparse, faire dot produit
+            log_likelihood = x @ np.log(self.likelihood[c])
+            scores[c] = log_prior + log_likelihood
+        # Retourne la classe avec le max score
         return max(scores, key=scores.get)
+
+    def score(self, x):
+        """
+        Pour One-vs-All: Retourne le score (log-probabilité) d'appartenance à la classe positive.
+        Ici, on retourne le log postérieur (log prior + log likelihood) pour la classe positive.
+        """
+        # On considère que la "classe positive" est la première classe dans prior
+        c_pos = list(self.prior.keys())[0]
+        log_prior = np.log(self.prior[c_pos])
+        log_likelihood = x @ np.log(self.likelihood[c_pos])
+        return log_prior + log_likelihood
+    
+class ClassifierNaiveBayesMultinomialBinary(Classifier):
+    def __init__(self, input_dimension, alpha=1.0):
+        self.input_dimension = input_dimension
+        self.alpha = alpha
+        self.prior = {}
+        self.likelihood = {}
+        self.classes = None
+
+    def train(self, X_train_sparse, y_train):
+        self.classes = np.unique(y_train)
+        V = self.input_dimension
+
+        total_docs = len(y_train)
+        self.prior = {c: np.sum(y_train == c) / total_docs for c in self.classes}
+
+        word_counts = {c: np.zeros(V) for c in self.classes}
+        class_counts = {c: 0 for c in self.classes}
+
+        for c in self.classes:
+            rows_c = X_train_sparse[y_train == c]
+            word_counts[c] = np.array(rows_c.sum(axis=0)).flatten()
+            class_counts[c] = word_counts[c].sum()
+
+        self.likelihood = {}
+        for c in self.classes:
+            self.likelihood[c] = (word_counts[c] + self.alpha) / (class_counts[c] + self.alpha * V)
+
+    def predict(self, X_test_sparse):
+        n_samples = X_test_sparse.shape[0]
+        y_pred = []
+        for i in range(n_samples):
+            x = X_test_sparse.getrow(i)
+            scores = {}
+            for c in self.classes:
+                log_prob = np.log(self.prior[c])
+                idx_nonzero = x.indices
+                log_prob += np.sum(np.log(self.likelihood[c][idx_nonzero]))
+                scores[c] = log_prob
+            y_pred.append(max(scores, key=scores.get))
+        return np.array(y_pred)
+
+    def score(self, x):
+        """
+        Calcule le score (log-probabilité) d'un seul échantillon x pour la classe positive (+1)
+        x : une description sous forme d'une ligne sparse matrix (1 x vocab_size)
+        
+        Retourne un score numérique (float).
+        """
+        # Ici, on calcule la log-probabilité (log prior + log vraisemblance) pour la classe positive (+1).
+        # Dans le cadre du OAA, on entraîne pour chaque classe un binaire +1/-1,
+        # donc on considère que la "classe positive" est celle pour laquelle ce modèle est entraîné.
+
+        # Attention : on ne sait pas quelle classe est positive ici, 
+        # donc cette méthode doit être appelée sur une instance spécifique pour une classe donnée.
+        # On suppose que c'est la classe positive.
+
+        log_prob = np.log(self.prior[1]) if 1 in self.prior else 0  # prior de la classe +1
+        idx_nonzero = x.indices
+        log_prob += np.sum(np.log(self.likelihood[1][idx_nonzero]))
+
+        return log_prob
 
 class NoeudCategoriel:
     """ Classe pour représenter des noeuds d'un arbre de décision
