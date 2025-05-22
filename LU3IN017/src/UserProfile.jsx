@@ -1,30 +1,17 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { UserContext } from './context/UserContext';
-import UserInfo from './UserInfo';
-import UserSettings from './UserSettings';
-import UserMessageList from './UserMessageList';
+import React from "react";
+import AddMessage from "./AddMessage.jsx";
 
-function UserProfile() {
-  const { user } = useContext(UserContext);
-  const [userInfo, setUserInfo] = useState(null);
-
-  useEffect(() => {
-    // 假设有获取用户资料的 API
-    const fetchUserInfo = async () => {
-      const userDetails = await getUserInfo(user.id);
-      setUserInfo(userDetails);
-    };
-    
-    fetchUserInfo();
-  }, [user]);
-
-  if (!userInfo) return <div>Loading...</div>;
-
+function UserProfile({ user, currentUser, addMessage }) {
   return (
     <div>
-      <UserInfo user={userInfo} />
-      <UserSettings user={userInfo} />
-      <UserMessageList userId={userInfo.id} />
+      {user.uid === currentUser.uid ? (
+        <div className="box">
+          <h2>Nouveau message</h2>
+          <AddMessage addMessage={addMessage} />
+        </div>
+      ) : (
+        ""
+      )}
     </div>
   );
 }

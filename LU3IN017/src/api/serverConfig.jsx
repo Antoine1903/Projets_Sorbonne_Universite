@@ -1,5 +1,5 @@
 import axios from 'axios';
-axios.defaults.baseURL = 'http://localhost:8000';
+axios.defaults.baseURL = 'http://localhost:4000';
 axios.defaults.withCredentials = true;
 
 function serverConfig(method, path, body={}) {

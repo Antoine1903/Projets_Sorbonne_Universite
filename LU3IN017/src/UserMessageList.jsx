@@ -1,25 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import Message from './Message';
+import React from "react";
+import MessageList from "./MessageList.jsx";
 
-function UserMessageList({ userId }) {
-  const [messages, setMessages] = useState([]);
-
-  useEffect(() => {
-    // 获取用户发布的消息
-    const fetchUserMessages = async () => {
-      const userMessages = await getUserMessages(userId);
-      setMessages(userMessages);
-    };
-
-    fetchUserMessages();
-  }, [userId]);
-
+function UserMessageList({ messages, removeMessage, currentUser, toUserPage }) {
   return (
-    <div>
-      <h4>Messages</h4>
-      {messages.map((message) => (
-        <Message key={message.id} {...message} />
-      ))}
+    <div className="box">
+      <h1>Derniers messages publiés</h1>
+      <article id="feed">
+        <MessageList
+          messages={messages}
+          removeMessage={removeMessage}
+          currentUser={currentUser}
+          toUserPage={toUserPage}
+        />
+      </article>
     </div>
   );
 }
