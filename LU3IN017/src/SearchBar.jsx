@@ -1,8 +1,6 @@
 import {useEffect, useRef} from "react";
 
-
 function SearchBar (props) {
-
     const search = useRef(null);
     const date_from = useRef(null);
     const date_to = useRef(null);
@@ -39,7 +37,6 @@ function SearchBar (props) {
             <button id="searchbar-btn" type="button" onClick={rechercher}>Rechercher</button>
         </form>
     );
-
 }
 
 export default SearchBar;

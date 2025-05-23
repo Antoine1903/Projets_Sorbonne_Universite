@@ -25,7 +25,7 @@ function AdminFeed (props) {
                 <AddMessage addMessage={addMessage} />
             </div>
             <div className="box">
-                <h1>Derniers messages publiés</h1>
+                <h1>Derniers messages publiés par les utilisateurs</h1>
                 <article id="feed">
                     <MessageList messages={messages} removeMessage={removeMessage} currentUser={props.currentUser} toUserPage={props.toUserPage} />
                 </article>

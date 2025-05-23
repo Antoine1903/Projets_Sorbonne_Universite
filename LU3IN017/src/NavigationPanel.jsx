@@ -1,9 +1,7 @@
 import Login from "./Login.jsx";
 import Logout from "./Logout.jsx";
 
-
 function NavigationPanel (props) {
-
     if(props.isConnected)
         return (
             <>

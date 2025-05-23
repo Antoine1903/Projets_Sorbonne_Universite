@@ -9,17 +9,19 @@ import {
 import UserInfo from "./UserInfo.jsx";
 import UserMessageList from "./UserMessageList.jsx";
 import UserProfile from "./UserProfile.jsx";
-import UserSettings from "./UserSettings.jsx";
 
 function User(props) {
+  const user = props.user;
+  const currentUser = props.currentUser;
+
   const [messages, setMessages] = useState([]);
-  const [isAdmin, setIsAdmin] = useState(props.user.user.admin);
+  const [isAdmin, setIsAdmin] = useState(user.admin);
 
   useEffect(() => {
     getMessagesRequest(
       setMessages,
-      props.user.user.uid,
-      props.currentUser.admin ? "" : "0"
+      user.uid,
+      currentUser.admin ? "" : "0"
     );
   }, []);
 
@@ -31,15 +33,18 @@ function User(props) {
     removeMessageRequest(messages, setMessages, mid);
   };
 
-  const setAdmin = () => {
-    if (props.user.user.uid !== props.currentUser.uid) {
-      const status = !isAdmin;
-      serverConfig(axios.patch, "api/admin", {
-        uid: props.user.user.uid,
-        status: status,
-      })
-        .then(setIsAdmin(status))
-        .catch(console.error);
+  const setAdmin = async () => {
+    if (user.uid !== currentUser.uid) {
+      const newStatus = !isAdmin;
+      try {
+        await serverConfig(axios.patch, "/api/admin", {
+          uid: user.uid,
+          status: newStatus,
+        });
+        setIsAdmin(newStatus);
+      } catch (err) {
+        console.error("Error updating admin status:", err);
+      }
     }
   };
 
@@ -50,33 +55,28 @@ function User(props) {
       </div>
 
       <UserInfo
-        user={props.user.user}
-        currentUser={props.currentUser}
+        user={user}
+        currentUser={currentUser}
         setAdmin={setAdmin}
         isAdmin={isAdmin}
       />
 
       <UserProfile
-        user={props.user.user}
-        currentUser={props.currentUser}
+        user={user}
+        currentUser={currentUser}
         addMessage={addMessage}
       />
 
       <UserMessageList
         messages={messages}
         removeMessage={removeMessage}
-        currentUser={props.currentUser}
+        currentUser={currentUser}
         toUserPage={props.toUserPage}
-      />
-
-      <UserSettings
-        user={props.user.user}
-        currentUser={props.currentUser}
-        setAdmin={setAdmin}
-        isAdmin={isAdmin}
       />
     </main>
   );
 }
 
 export default User;
+
+

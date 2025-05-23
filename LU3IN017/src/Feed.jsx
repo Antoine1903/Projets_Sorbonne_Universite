@@ -3,7 +3,6 @@ import {getMessagesRequest, addMessageRequest, removeMessageRequest} from './api
 import MessageList from "./MessageList.jsx";
 import AddMessage from "./AddMessage.jsx";
 
-
 function Feed (props) {
     const [messages, setMessages] = useState([]);
     
@@ -26,7 +25,7 @@ function Feed (props) {
                 <AddMessage addMessage={addMessage} />
             </div>
             <div className="box">
-                <h1>Derniers messages publiés</h1>
+                <h1>Derniers messages publiés par les utilisateurs</h1>
                 <article id="feed">
                     <MessageList messages={messages} removeMessage={removeMessage} currentUser={props.currentUser} toUserPage={props.toUserPage} />
                 </article>

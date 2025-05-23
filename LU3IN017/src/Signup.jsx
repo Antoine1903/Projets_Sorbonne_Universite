@@ -9,12 +9,17 @@ function SignUp(props) {
     const [password1, setPassword1] = useState("");
     const [password2, setPassword2] = useState("");
     const [alert, setAlert] = useState(null);
+    const [showPassword1, setShowPassword1] = useState(false);
+    const [showPassword2, setShowPassword2] = useState(false);
 
     const getFirstName = (event) => setFirstName(event.target.value);
     const getLastName = (event) => setLastName(event.target.value);
     const getUsername = (event) => setUsername(event.target.value);
     const getPassword1 = (event) => setPassword1(event.target.value);
     const getPassword2 = (event) => setPassword2(event.target.value);
+
+    const togglePasswordVisibility1 = () => setShowPassword1(!showPassword1);
+    const togglePasswordVisibility2 = () => setShowPassword2(!showPassword2);
 
     const submissionHandler = () => {
         if (firstName && lastName && username && password1 && password2) {
@@ -63,11 +68,33 @@ function SignUp(props) {
                         </div>
                         <div>
                             <label htmlFor="signup_password">Mot de passe</label>
-                            <input type="password" id="signup_password" placeholder="Mot de passe" onChange={getPassword1} required />
+                            <div className="password-input-container">
+                                <input
+                                    type={showPassword1 ? "text" : "password"}
+                                    id="signup_password"
+                                    placeholder="Mot de passe"
+                                    onChange={getPassword1}
+                                    required
+                                />
+                                <button type="button" onClick={togglePasswordVisibility1}>
+                                    {showPassword1 ? "🙈" : "👀"}
+                                </button>
+                            </div>
                         </div>
                         <div>
                             <label htmlFor="signup_password-confirm">Confirmer le mot de passe</label>
-                            <input type="password" id="signup_password-confirm" placeholder="Confirmer le mot de passe" onChange={getPassword2} required />
+                            <div className="password-input-container">
+                                <input
+                                    type={showPassword2 ? "text" : "password"}
+                                    id="signup_password-confirm"
+                                    placeholder="Confirmer le mot de passe"
+                                    onChange={getPassword2}
+                                    required
+                                />
+                                <button type="button" onClick={togglePasswordVisibility2}>
+                                    {showPassword2 ? "🙈" : "👀"}
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <button type="button" onClick={submissionHandler}>S'inscrire</button>

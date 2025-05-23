@@ -1,4 +1,3 @@
-import React from "react";
 import MessageList from "./MessageList.jsx";
 
 function UserMessageList({ messages, removeMessage, currentUser, toUserPage }) {

@@ -1,7 +1,12 @@
-function EditMessage({ onEdit, id }) {
+function EditReply({ onEdit, id }) {
   return (
     <div className="reply-icon">
-      <button type="button" className="btn-icon-reply" onClick={() => onEdit(id)} aria-label="Modifier le message">
+      <button 
+        type="button" 
+        className="btn-icon-reply" 
+        onClick={() => onEdit(id)}
+        aria-label="Modifier la réponse"
+      >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="24"
@@ -17,4 +22,4 @@ function EditMessage({ onEdit, id }) {
   );
 }
 
-export default EditMessage;
+export default EditReply;

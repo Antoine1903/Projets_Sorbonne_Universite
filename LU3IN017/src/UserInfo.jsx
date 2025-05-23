@@ -1,5 +1,3 @@
-import React from "react";
-
 function UserInfo({ user, currentUser, setAdmin, isAdmin }) {
   return (
     <h1>

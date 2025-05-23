@@ -1,5 +1,4 @@
 function AddMessage (props) {
-
   return (
       <form id="new-message">
           <div>
@@ -10,10 +9,9 @@ function AddMessage (props) {
               <label htmlFor="message-content">Contenu du message</label>
               <textarea id="message-content" placeholder="Veuillez saisir votre message"></textarea>
           </div>
-          <button type="button" onClick={props.addMessage}>Soumettre le message</button>
+          <button type="button" onClick={props.addMessage}>Envoyer</button>
       </form>
   );
-
 }
 
 export default AddMessage;

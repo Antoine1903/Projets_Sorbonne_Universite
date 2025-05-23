@@ -3,7 +3,6 @@ import axios from 'axios';
 import serverConfig from "./api/serverConfig.jsx";
 
 function Login(props) {
-    // Login modal
     const domModal = useRef(null);
 
     const modalOpen = () => {
@@ -14,9 +13,9 @@ function Login(props) {
         domModal.current.style.display = "none";
     };
 
-    // Login form
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
 
     const getUsername = (event) => {
         setUsername(event.target.value);
@@ -26,10 +25,12 @@ function Login(props) {
         setPassword(event.target.value);
     };
 
-    // Message
+    const togglePasswordVisibility = () => {
+        setShowPassword(!showPassword);
+    };
+
     const [alert, setAlert] = useState(null);
 
-    // Handle login
     const handleLogin = () => {
         if (username && password) {
             serverConfig(axios.post, '/api/authentification', {
@@ -48,6 +49,12 @@ function Login(props) {
         }
     };
 
+    const handleKeyDown = (event) => {
+        if (event.key === 'Enter') {
+            handleLogin();
+        }
+    };
+
     return (
         <div className="login-container">
             <button id="login-btn" onClick={modalOpen}>Se connecter</button>
@@ -56,7 +63,7 @@ function Login(props) {
                     <span className="modal-close" onClick={modalClose}>&times;</span>
                     <h2>Se connecter</h2>
                     {alert && <div className='alert error'>{alert}</div>}
-                    <form id="login" method="post" action="">
+                    <form id="login" method="post" action="" onKeyDown={handleKeyDown}>
                         <div className="form-group">
                             <label htmlFor="username">Identifiant</label>
                             <input
@@ -69,13 +76,18 @@ function Login(props) {
                         </div>
                         <div className="form-group">
                             <label htmlFor="password">Mot de passe</label>
-                            <input
-                                type="password"
-                                id="password"
-                                placeholder="Mot de passe"
-                                onChange={getPassword}
-                                required
-                            />
+                            <div className="password-input-container">
+                                <input
+                                    type={showPassword ? "text" : "password"}
+                                    id="password"
+                                    placeholder="Mot de passe"
+                                    onChange={getPassword}
+                                    required
+                                />
+                                <button type="button" onClick={togglePasswordVisibility}>
+                                    {showPassword ? "🙈" : "👀"}
+                                </button>
+                            </div>
                         </div>
                         <button type="button" onClick={handleLogin}>Connexion</button>
                     </form>

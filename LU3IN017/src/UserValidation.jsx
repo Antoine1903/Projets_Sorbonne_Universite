@@ -1,59 +1,57 @@
-import {useState, useEffect} from "react";
+import { useState, useEffect } from "react";
 import axios from 'axios';
 import serverConfig from "./api/serverConfig.jsx";
 import ValidateUser from "./ValidateUser.jsx";
 
-
-function UserValidation (props) {
+function UserValidation(props) {
     const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    const getUnregisteredUsers = async () => {
+    const fetchUsers = async () => {
+        setLoading(true);
         try {
-            let response = await server_request(axios.get, '/api/user/?registered=0');
+            const response = await serverConfig(axios.get, '/api/user/?registered=0');
             setUsers(response.data);
-        }
-        catch(err) {
+        } catch(err) {
             console.error(err);
+        } finally {
+            setLoading(false);
         }
-    }
+    };
 
     useEffect(() => {
-        getUnregisteredUsers();
-    } , []);
+        fetchUsers();
+    }, []);
 
-    function accept_user(user) {
-        serverConfig(axios.patch, `/api/demand/${user.uid}`)
-            .then()
-            .catch(console.error)
-            .finally(getUnregisteredUsers);
-    }
+    const handleActionComplete = async (actionFn, user) => {
+        const success = await actionFn(user);
+        if (success) {
+            await fetchUsers();
+        }
+    };
 
-    function reject_user(user) {
-        serverConfig(axios.delete, `/api/demand/${user.uid}`)
-            .then()
-            .catch(console.error)
-            .finally(getUnregisteredUsers);
-    }
+    if (loading) return <div>Chargement...</div>;
 
-    return <>
+    return (
         <div className="box">
-            <h3>En attente de validation</h3>
-            <ul className="">
-                { users.length === 0 ?
-                    <div>Aucun</div>
-                :
-                    <>
-                        {users.map((user, index) => (
-                            <li key={index}>
-                                <ValidateUser id={index} user={user} accept={accept_user} reject={reject_user} />
-                            </li>
-                        ))}
-                    </>
-                }
-            </ul>
+            <h4>En attente de validation</h4>
+            {users.length === 0 ? (
+                <div>Aucun</div>
+            ) : (
+                <ul>
+                    {users.map((user, index) => (
+                        <li key={index}>
+                            <ValidateUser 
+                                user={user} 
+                                accept={(user) => handleActionComplete(props.accept_user, user)}
+                                reject={(user) => handleActionComplete(props.reject_user, user)}
+                            />
+                        </li>
+                    ))}
+                </ul>
+            )}
         </div>
-    </>;
-
+    );
 }
 
 export default UserValidation;

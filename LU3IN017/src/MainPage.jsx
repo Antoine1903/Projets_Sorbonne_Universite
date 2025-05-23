@@ -10,6 +10,7 @@ import SearchBar from "./SearchBar.jsx";
 import AdminSidebar from "./AdminSidebar.jsx";
 import AdminFeed from "./AdminFeed.jsx";
 
+
 function MainPage(props) {
     const [currentPage, setCurrentPage] = useState({ page: "signup_page", param: null });
     const [isConnected, setConnected] = useState(false);
@@ -69,18 +70,20 @@ function MainPage(props) {
         <div className="main-container">
             <header className="main-header">
                 <div id="logo">
-                    {isConnected && currentPage.page !== "feed_page" ? <a onClick={toFeedPage}>Forum</a> : "Forum"}
+                    <span className="forum-title">Bienvenue sur notre forum!</span>
                 </div>
-                {isConnected && <SearchBar toResultPage={toResultPage} />}
-                <nav id="nav-login">
-                    <NavigationPanel
-                        login={getConnected}
-                        logout={setLogout}
-                        isConnected={isConnected}
-                        currentUser={currentUser}
-                        toUserPage={toUserPage}
-                    />
-                </nav>
+                <div className="header-right">
+                    {isConnected && <SearchBar toResultPage={toResultPage} />}
+                    <nav id="nav-login">
+                        <NavigationPanel
+                            login={getConnected}
+                            logout={setLogout}
+                            isConnected={isConnected}
+                            currentUser={currentUser}
+                            toUserPage={toUserPage}
+                        />
+                    </nav>
+                </div>
             </header>
             <section className="main-section">
                 {currentUser && currentUser.admin && (currentPage.page === "feed_page" || currentPage.page === "feed_admin_page") && (
